@@ -1,0 +1,7 @@
+{
+  "name": "ImagiPIC",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
