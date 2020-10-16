@@ -28,7 +28,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-	"ionic-deploy":"npm ci & ionic build --prod" 
+    "ionic-deploy": "npm ci && npm i -D -E @ionic/cli && ionic build --prod"
   },
   "eslintConfig": {
     "extends": "react-app"
