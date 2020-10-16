@@ -14,10 +14,10 @@ const Tab1: React.FC = () => {
       <IonContent fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">ImagiPIC</IonTitle>
+            <IonTitle size="large">ImagiPIC App</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <ExploreContainer name="Tab 1 page" />
+        <ExploreContainer name="Here we will do ImagiPIC" />
       </IonContent>
     </IonPage>
   );
