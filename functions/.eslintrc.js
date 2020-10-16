@@ -17,7 +17,6 @@ module.exports = {
     "@typescript-eslint",
     "import",
   ],
-  root: true,
   rules: {
     "@typescript-eslint/adjacent-overload-signatures": "error",
     "@typescript-eslint/no-empty-function": "error",

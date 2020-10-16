@@ -10,8 +10,8 @@
     ]
   },
   "hosting": {
-    "predeploy": "ionic build --prod",
-    "public": "build",
+    "predeploy": "npm run ionic-deploy --prefix IonicSource",
+    "public": "./IonicSource/build",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -21,17 +21,6 @@
       {
         "source": "**",
         "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000"
-          }
-        ]
       }
     ]
   },
