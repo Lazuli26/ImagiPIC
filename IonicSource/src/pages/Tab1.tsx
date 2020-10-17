@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import { langs, LanguageType } from '../lang';
 import { CombinedState } from '../reducers';
 import { ChangeLang } from '../reducers/language';
+import { RunGeometrize } from '../assets/libraries/Geometrize';
 
 const Tab: React.FC<stateProps & dispatchProps> = props => {
   return (
@@ -21,11 +22,14 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
             <IonTitle size="large">ImagiPIC App</IonTitle>
           </IonToolbar>
         </IonHeader>
-
+        <span id="svg-container"/>
         <IonButton onClick={() => {
           props.changeLanguage(props.currentLanguage === "es" ? "en" : "es")
         }}>
           {props.Language.menu.play_btn}
+        </IonButton>
+        <IonButton onClick={RunGeometrize}>
+          Test Geometrize
         </IonButton>
         <ExploreContainer name="Here we will do ImagiPIC" />
       </IonContent>
