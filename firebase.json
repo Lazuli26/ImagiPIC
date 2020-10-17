@@ -10,6 +10,17 @@
     ]
   },
   "hosting": {
+    "headers": [
+      {
+        "source": "/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000"
+          }
+        ]
+      }
+    ],
     "predeploy": "npm run ionic-deploy --prefix IonicSource",
     "public": "./IonicSource/build",
     "ignore": [
