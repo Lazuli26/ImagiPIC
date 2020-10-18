@@ -33,11 +33,12 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
         <div>
           <span className="geometrizeView" id="svg-container" />
         </div>
-        <IonButton onClick={() => {
+<div id="loadingDiv" style={{display:"hidden"}}>Cargando...</div>
+        {/*<IonButton onClick={() => {
           props.changeLanguage(props.currentLanguage === "es" ? "en" : "es")
         }}>
           {props.Language.menu.play_btn}
-        </IonButton>
+        </IonButton>*/}
         <img className="originalImage" ref={ImageRef} alt="" />
         <input ref={InputRef} style={{ display: "none" }} type="file" title="input" accept="image/jpeg, image/png, image/bmp." onChange={event => {
           if (_.get(event.target.files, 0)) {
@@ -58,15 +59,15 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
         <IonButton onClick={() => {
           InputRef?.current?.click()
         }}>
-          Set Image
+          Escoger Imagen
         </IonButton>
         <IonButton onClick={() => {
           GeometrizeRunner.step()
         }}>
-          Test Geometrize
+          Paso a paso
         </IonButton>
         <IonButton onClick={runAuto}>
-          Run Automatically
+          Ir automáticamente
         </IonButton>
         {//<ExploreContainer name="Here we will do ImagiPIC" />
         }
