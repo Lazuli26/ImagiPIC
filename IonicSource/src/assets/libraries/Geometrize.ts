@@ -72,7 +72,7 @@ $("#loadingDiv").hide()
                 this.iteration++;
                 this.shapes.push(SvgExporter.exportShapes(this.runner.step(this.options)))
             }
-$("#ShapeCounter").html(this.shapes.length)
+$("#ShapeCounter").html(String(this.shapes.length as string))
             const svg = SvgExporter.getSvgPrelude() +
                 SvgExporter.getSvgNodeOpen(this.bitmap?.width || 0, this.bitmap?.height || 0) +
                 this.shapes.join('\n') +
