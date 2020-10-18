@@ -49,6 +49,8 @@ export class GeometrizeEngine {
     bitmap: Bitmap | undefined;
     maxPixels = 375000;
     async SetImage(imageURL: string) {
+$("#loadingDiv").show()
+
         this.shapes = [];
         this.iteration = 0;
         const image = await Jimp.read(imageURL);
@@ -61,6 +63,7 @@ export class GeometrizeEngine {
             image.bitmap.height, image.bitmap.data)
         this.runner = new ImageRunner(this.bitmap)
         this.step(1);
+$("#loadingDiv").hide()
     }
 
     public step(steps: number = 1, callBack?: Function) {
