@@ -47,7 +47,7 @@ export class GeometrizeEngine {
         this.runner = undefined;
     }
     bitmap: Bitmap | undefined;
-    maxPixels = 375000;
+    maxPixels = 250000;
     async SetImage(imageURL: string) {
 $("#loadingDiv").show()
 
