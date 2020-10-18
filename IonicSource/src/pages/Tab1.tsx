@@ -14,6 +14,10 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
   const GeometrizeRunner = new GeometrizeEngine();
   var InputRef: MutableRefObject<HTMLInputElement | null> = useRef(null);
   var ImageRef: MutableRefObject<HTMLImageElement | null> = useRef(null);
+
+  const runAuto = () =>{
+    GeometrizeRunner.step(1, runAuto);
+  }
   return (
     <IonPage>
       <IonHeader>
@@ -27,23 +31,25 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
             <IonTitle size="large">ImagiPIC App</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <span id="svg-container" />
+        <div>
+          <span className="geometrizeView" id="svg-container" />
+        </div>
         <IonButton onClick={() => {
           props.changeLanguage(props.currentLanguage === "es" ? "en" : "es")
         }}>
           {props.Language.menu.play_btn}
         </IonButton>
-        <img ref={ImageRef} alt="" style={{ maxWidth: "5vw", maxHeight: "5vh" }} />
+        <img className="originalImage" ref={ImageRef} alt="" />
         <input ref={InputRef} style={{ display: "none" }} type="file" title="input" accept="image/jpeg, image/png, image/bmp." onChange={event => {
           if (_.get(event.target.files, 0)) {
-            
+
             var reader = new FileReader();
 
             reader.onload = function (e) {
               if (ImageRef.current)
                 //@ts-ignore
                 ImageRef.current.src = reader.result;
-                GeometrizeRunner.SetImage(reader.result as string);
+              GeometrizeRunner.SetImage(reader.result as string);
             }
             //@ts-ignore
             reader.readAsDataURL(_.get(event.target.files, 0));
@@ -60,7 +66,11 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
         }}>
           Test Geometrize
         </IonButton>
-        <ExploreContainer name="Here we will do ImagiPIC" />
+        <IonButton onClick={runAuto}>
+          Run Automatically
+        </IonButton>
+        {//<ExploreContainer name="Here we will do ImagiPIC" />
+        }
       </IonContent>
     </IonPage>
   );

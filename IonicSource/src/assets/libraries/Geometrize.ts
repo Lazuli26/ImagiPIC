@@ -1,7 +1,6 @@
 import Jimp from 'jimp'
 import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeTypes, SvgExporter } from 'geometrizejs'
-
-
+import $ from 'jquery'
 export class GeometrizeEngine {
     private _options: ImageRunnerOptions = {
         shapeTypes: [ShapeTypes.CIRCLE],
@@ -50,17 +49,26 @@ export class GeometrizeEngine {
         this.runner = undefined;
     }
     bitmap: Bitmap | undefined;
+    maxPixels = 375000;
     async SetImage(imageURL: string) {
+        this.shapes = [];
+        this.iteration = 0;
         const image = await Jimp.read(imageURL);
+        const totalPixels = image.bitmap.width * image.bitmap.height;
+        if(totalPixels > this.maxPixels){
+            const scale = this.maxPixels / totalPixels
+            image.resize(Math.floor(image.bitmap.width * scale), Jimp.AUTO)
+        }
         this.bitmap = Bitmap.createFromByteArray(image.bitmap.width,
             image.bitmap.height, image.bitmap.data)
         this.runner = new ImageRunner(this.bitmap)
         this.step(1);
     }
 
-    public step(steps: number = 1) {
-        if (this.runner !== undefined && this.bitmap !== undefined){
-            for (let i = 0; i < steps; i++) {
+    public step(steps: number = 1, callBack?: Function) {
+        if (this.runner !== undefined && this.bitmap !== undefined && this.iteration < this.maxIterations){
+            for (let i = 0; i < steps && this.iteration < this.maxIterations; i++) {
+                this.iteration++;
                 this.shapes.push(SvgExporter.exportShapes(this.runner.step(this.options)))
             }
             const svg = SvgExporter.getSvgPrelude() +
@@ -70,8 +78,21 @@ export class GeometrizeEngine {
     
             // in the browser:
             const container = document.getElementById('svg-container');
-            if (container)
-                container.innerHTML = svg
+            if (container){
+                container.innerHTML = svg;
+                const svgElement = $("#svg-container > svg").first();
+                svgElement.attr("viewBox", `0 0 ${this.bitmap?.width || 0} ${this.bitmap?.height || 0}`)
+                svgElement.removeAttr("height")
+                svgElement.removeAttr("width")
+                svgElement.addClass("geometrizeView")
+            }
+            if(callBack){
+                setTimeout(() => {
+                    callBack();
+                }, 500);
+            }
+                
+
         } 
         return null;
     }
