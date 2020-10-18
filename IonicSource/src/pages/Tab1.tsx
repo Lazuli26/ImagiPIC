@@ -1,14 +1,19 @@
-import React from 'react';
-import { IonButton, IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
+import _ from 'lodash';
+
+import React, { MutableRefObject, useRef } from 'react';
+import { IonButton, IonContent, IonHeader, IonInput, IonPage, IonTitle, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../components/ExploreContainer';
 import './Tab1.css';
 import { connect } from 'react-redux';
 import { langs, LanguageType } from '../lang';
 import { CombinedState } from '../reducers';
 import { ChangeLang } from '../reducers/language';
-import { RunGeometrize } from '../assets/libraries/Geometrize';
+import { GeometrizeEngine } from '../assets/libraries/Geometrize';
 
 const Tab: React.FC<stateProps & dispatchProps> = props => {
+  const GeometrizeRunner = new GeometrizeEngine();
+  var InputRef: MutableRefObject<HTMLInputElement | null> = useRef(null);
+  var ImageRef: MutableRefObject<HTMLImageElement | null> = useRef(null);
   return (
     <IonPage>
       <IonHeader>
@@ -22,13 +27,37 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
             <IonTitle size="large">ImagiPIC App</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <span id="svg-container"/>
+        <span id="svg-container" />
         <IonButton onClick={() => {
           props.changeLanguage(props.currentLanguage === "es" ? "en" : "es")
         }}>
           {props.Language.menu.play_btn}
         </IonButton>
-        <IonButton onClick={RunGeometrize}>
+        <img ref={ImageRef} style={{ maxWidth: "5vw", maxHeight: "5vh" }} />
+        <input ref={InputRef} style={{ display: "none" }} type="file" title="input" accept="image/jpeg, image/png, image/bmp." onChange={event => {
+          if (_.get(event.target.files, 0)) {
+            
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+              if (ImageRef.current)
+                //@ts-ignore
+                ImageRef.current.src = reader.result;
+                GeometrizeRunner.SetImage(reader.result as string);
+            }
+            //@ts-ignore
+            reader.readAsDataURL(_.get(event.target.files, 0));
+          }
+
+        }} />
+        <IonButton onClick={() => {
+          InputRef?.current?.click()
+        }}>
+          Set Image
+        </IonButton>
+        <IonButton onClick={() => {
+          GeometrizeRunner.step()
+        }}>
           Test Geometrize
         </IonButton>
         <ExploreContainer name="Here we will do ImagiPIC" />
