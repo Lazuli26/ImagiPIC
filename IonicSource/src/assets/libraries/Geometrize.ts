@@ -1,5 +1,5 @@
 import Jimp from 'jimp'
-import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeJsonExporter, ShapeTypes, SvgExporter } from 'geometrizejs'
+import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeTypes, SvgExporter } from 'geometrizejs'
 
 
 export class GeometrizeEngine {
