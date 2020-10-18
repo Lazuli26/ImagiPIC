@@ -33,7 +33,7 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
         }}>
           {props.Language.menu.play_btn}
         </IonButton>
-        <img ref={ImageRef} style={{ maxWidth: "5vw", maxHeight: "5vh" }} />
+        <img ref={ImageRef} alt="" style={{ maxWidth: "5vw", maxHeight: "5vh" }} />
         <input ref={InputRef} style={{ display: "none" }} type="file" title="input" accept="image/jpeg, image/png, image/bmp." onChange={event => {
           if (_.get(event.target.files, 0)) {
             
