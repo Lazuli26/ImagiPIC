@@ -8,7 +8,7 @@ const defaultOptions = {
     shapeMutationsPerStep: 100,
     alpha: 128
 }
-const defaultMaxIterations = 300;
+const defaultMaxIterations = 1000;
 export class GeometrizeEngine {
     private _options: ImageRunnerOptions = defaultOptions;
 
@@ -66,12 +66,13 @@ $("#loadingDiv").show()
 $("#loadingDiv").hide()
     }
 
-    public step(steps: number = 1, callBack?: Function) {
+    public step(steps: number = 5, callBack?: Function) {
         if (this.runner !== undefined && this.bitmap !== undefined && this.iteration < this.maxIterations){
             for (let i = 0; i < steps && this.iteration < this.maxIterations; i++) {
                 this.iteration++;
                 this.shapes.push(SvgExporter.exportShapes(this.runner.step(this.options)))
             }
+$("#ShapeCounter").html(this.shapes.length)
             const svg = SvgExporter.getSvgPrelude() +
                 SvgExporter.getSvgNodeOpen(this.bitmap?.width || 0, this.bitmap?.height || 0) +
                 this.shapes.join('\n') +
