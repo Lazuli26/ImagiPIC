@@ -33,7 +33,7 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
         <div>
           <span className="geometrizeView" id="svg-container" />
         </div>
-<div id="loadingDiv" style={{display:"hidden"}}>Cargando...</div>
+<div id="loadingDiv" style={{display:"none"}}>Cargando...</div>
         {/*<IonButton onClick={() => {
           props.changeLanguage(props.currentLanguage === "es" ? "en" : "es")
         }}>
