@@ -1,13 +1,16 @@
 import Jimp from 'jimp'
 import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeTypes, SvgExporter } from 'geometrizejs'
 import $ from 'jquery'
+
+const defaultOptions = {
+    shapeTypes: [ShapeTypes.ROTATED_ELLIPSE, ShapeTypes.TRIANGLE],
+    candidateShapesPerStep: 50,
+    shapeMutationsPerStep: 100,
+    alpha: 128
+}
+const defaultMaxIterations = 300;
 export class GeometrizeEngine {
-    private _options: ImageRunnerOptions = {
-        shapeTypes: [ShapeTypes.CIRCLE],
-        candidateShapesPerStep: 50,
-        shapeMutationsPerStep: 100,
-        alpha: 128
-    };
+    private _options: ImageRunnerOptions = defaultOptions;
 
     /**Current options of the runner */
     public get options(): ImageRunnerOptions {
@@ -17,7 +20,7 @@ export class GeometrizeEngine {
         this._options = value;
     }
     iteration: number = 0;
-    maxIterations: number = 200;
+    maxIterations: number = defaultMaxIterations;
     runner?: ImageRunner;
 
     private _shapes: string[] = [];
@@ -38,13 +41,8 @@ export class GeometrizeEngine {
     }
     private Reset() {
         this.iteration = 0;
-        this.maxIterations = 200;
-        this.options = {
-            shapeTypes: [ShapeTypes.CIRCLE],
-            candidateShapesPerStep: 10,
-            shapeMutationsPerStep: 20,
-            alpha: 128
-        };
+        this.maxIterations = defaultMaxIterations;
+        this.options = defaultOptions;
         this.shapes = [];
         this.runner = undefined;
     }
