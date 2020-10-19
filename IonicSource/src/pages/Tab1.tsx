@@ -15,7 +15,7 @@ const Tab: React.FC<stateProps & dispatchProps> = props => {
   var ImageRef: MutableRefObject<HTMLImageElement | null> = useRef(null);
 
   const runAuto = () =>{
-    GeometrizeRunner.step(1, runAuto);
+    GeometrizeRunner.step(5, runAuto);
   }
   return (
     <IonPage>
