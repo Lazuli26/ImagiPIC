@@ -1,6 +1,11 @@
 import Jimp from 'jimp'
 import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeTypes, SvgExporter } from 'geometrizejs'
-import $ from 'jquery'
+
+export interface GeometrizeClass {
+    SetImage: (imageURL: string) => Promise<void>,
+    step: (steps: number) => Promise<[string, number]>,
+    generateSvg: (shapes: string[]) => string
+}
 
 const defaultOptions = {
     shapeTypes: [ShapeTypes.ROTATED_ELLIPSE, ShapeTypes.TRIANGLE],
@@ -9,7 +14,7 @@ const defaultOptions = {
     alpha: 128
 }
 const defaultMaxIterations = 1000;
-export class GeometrizeEngine {
+export class GeometrizeEngine implements GeometrizeClass {
     private _options: ImageRunnerOptions = defaultOptions;
 
     /**Current options of the runner */
@@ -47,55 +52,55 @@ export class GeometrizeEngine {
         this.runner = undefined;
     }
     bitmap: Bitmap | undefined;
-    maxPixels = 250000;
-    async SetImage(imageURL: string) {
-$("#loadingDiv").show()
-
+    maxPixels = 160000;
+    async SetImage(imageURL: string): Promise<void> {
         this.shapes = [];
         this.iteration = 0;
         const image = await Jimp.read(imageURL);
         const totalPixels = image.bitmap.width * image.bitmap.height;
-        if(totalPixels > this.maxPixels){
-            const scale = this.maxPixels / totalPixels
-            image.resize(Math.floor(image.bitmap.width * scale), Jimp.AUTO)
+        if (totalPixels > this.maxPixels) {
+            const scale = Math.sqrt(totalPixels / this.maxPixels);
+            image.resize(Math.floor(image.bitmap.width / scale), Jimp.AUTO)
         }
         this.bitmap = Bitmap.createFromByteArray(image.bitmap.width,
             image.bitmap.height, image.bitmap.data)
         this.runner = new ImageRunner(this.bitmap)
-        this.step(1);
-$("#loadingDiv").hide()
     }
 
-    public step(steps: number = 5, callBack?: Function) {
-        if (this.runner !== undefined && this.bitmap !== undefined && this.iteration < this.maxIterations){
-            for (let i = 0; i < steps && this.iteration < this.maxIterations; i++) {
-                this.iteration++;
-                this.shapes.push(SvgExporter.exportShapes(this.runner.step(this.options)))
+    public async step(steps: number = 1): Promise<[string, number]> {
+        return new Promise<[string, number]>(async callback => {
+            if (this.runner !== undefined && this.bitmap !== undefined && this.iteration < this.maxIterations) {
+                const newShapes = [];
+                for (let i = 0; i < steps && this.iteration < this.maxIterations; i++) {
+                    this.iteration++;
+                    newShapes.push(await this.stepTimeOut())
+                }
+                this.shapes = this.shapes.concat(newShapes)
+                // in the browser:
+                /*const container = document.getElementById('svg-container');
+                if (container) {
+                    container.innerHTML = svg;
+                    const svgElement = $("#svg-container > svg").first();
+                    svgElement.attr("viewBox", `0 0 ${this.bitmap?.width || 0} ${this.bitmap?.height || 0}`)
+                    svgElement.removeAttr("height")
+                    svgElement.removeAttr("width")
+                    svgElement.addClass("geometrizeView")
+                }*/
             }
-$("#ShapeCounter").html(String(this.shapes.length))
-            const svg = SvgExporter.getSvgPrelude() +
-                SvgExporter.getSvgNodeOpen(this.bitmap?.width || 0, this.bitmap?.height || 0) +
-                this.shapes.join('\n') +
-                SvgExporter.getSvgNodeClose()
-    
-            // in the browser:
-            const container = document.getElementById('svg-container');
-            if (container){
-                container.innerHTML = svg;
-                const svgElement = $("#svg-container > svg").first();
-                svgElement.attr("viewBox", `0 0 ${this.bitmap?.width || 0} ${this.bitmap?.height || 0}`)
-                svgElement.removeAttr("height")
-                svgElement.removeAttr("width")
-                svgElement.addClass("geometrizeView")
-            }
-            if(callBack){
-                setTimeout(() => {
-                    callBack();
-                }, 500);
-            }
-                
-
-        } 
-        return null;
+            callback([this.generateSvg(this.shapes), this.shapes.length]);
+        })
+    }
+    private stepTimeOut(): Promise<string> {
+        return new Promise<string>(callback => {
+            setTimeout(() => {
+                callback(SvgExporter.exportShapes((this.runner as ImageRunner).step(this.options)))
+            }, 100);
+        })
+    }
+    public generateSvg(shapes: string[]): string {
+        return SvgExporter.getSvgPrelude() +
+            SvgExporter.getSvgNodeOpen((this.bitmap?.width || 0), (this.bitmap?.height || 0)) +
+            shapes.join('\n') +
+            SvgExporter.getSvgNodeClose()
     }
 }

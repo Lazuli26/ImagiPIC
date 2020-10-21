@@ -33,7 +33,7 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
-
+//@ts-ignore
 const App: React.FC = props => {
   return <IonApp>
     <IonReactRouter>
