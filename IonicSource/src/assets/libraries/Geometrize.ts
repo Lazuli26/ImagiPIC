@@ -68,27 +68,25 @@ export class GeometrizeEngine implements GeometrizeClass {
     }
 
     public async step(steps: number = 1): Promise<[string, number]> {
-        return new Promise<[string, number]>(async callback => {
-            if (this.runner !== undefined && this.bitmap !== undefined && this.iteration < this.maxIterations) {
-                const newShapes = [];
-                for (let i = 0; i < steps && this.iteration < this.maxIterations; i++) {
-                    this.iteration++;
-                    newShapes.push(await this.stepTimeOut())
-                }
-                this.shapes = this.shapes.concat(newShapes)
-                // in the browser:
-                /*const container = document.getElementById('svg-container');
-                if (container) {
-                    container.innerHTML = svg;
-                    const svgElement = $("#svg-container > svg").first();
-                    svgElement.attr("viewBox", `0 0 ${this.bitmap?.width || 0} ${this.bitmap?.height || 0}`)
-                    svgElement.removeAttr("height")
-                    svgElement.removeAttr("width")
-                    svgElement.addClass("geometrizeView")
-                }*/
+        if (this.runner !== undefined && this.bitmap !== undefined && this.iteration < this.maxIterations) {
+            const newShapes = [];
+            for (let i = 0; i < steps && this.iteration < this.maxIterations; i++) {
+                this.iteration++;
+                newShapes.push(await this.stepTimeOut())
             }
-            callback([this.generateSvg(this.shapes), this.shapes.length]);
-        })
+            this.shapes = this.shapes.concat(newShapes)
+            // in the browser:
+            /*const container = document.getElementById('svg-container');
+            if (container) {
+                container.innerHTML = svg;
+                const svgElement = $("#svg-container > svg").first();
+                svgElement.attr("viewBox", `0 0 ${this.bitmap?.width || 0} ${this.bitmap?.height || 0}`)
+                svgElement.removeAttr("height")
+                svgElement.removeAttr("width")
+                svgElement.addClass("geometrizeView")
+            }*/
+        }
+        return ([this.generateSvg(this.shapes), this.shapes.length]);
     }
     private stepTimeOut(): Promise<string> {
         return new Promise<string>(callback => {

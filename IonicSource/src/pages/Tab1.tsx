@@ -26,6 +26,7 @@ class Tab extends React.Component<stateProps & dispatchProps, { Running: boolean
   }
   runAuto = () => {
     GeometrizeRunner.step(1).then(([value, count]) => {
+      if(count === GeometrizeRunner.maxIterations) this.setState({Running: false});
       const container = $("#svg-container");
       container.html(value);
       if (container) {
