@@ -1,26 +1,38 @@
+.pageContent{
+    display: inline-flex;
+    height: 100%;
+}
 /* Portrait */
 @media screen and (orientation:portrait) {
     /* Portrait styles */
-    .geometrizeView{
-        max-height: 75vh;
-        max-width: 100vw;
+    .pageContent{
+        flex-direction: column;
     }
     .originalImage{
         max-height: 10vh;
         max-width: 5vw;
         display: none;
+    };
+    .controlContainer{
+        padding: 7.5vw;
+        *{
+            width: 100%;
+        }
     }
 }
 /* Landscape */
 @media screen and (orientation:landscape) {
     /* Landscape styles */
-    .geometrizeView{
-        max-height: 75vh;
-        max-width: 50vw;
-    }
     .originalImage{
         max-height: 10vh;
         max-width: 15vw;
         display: none;
+    }
+    .controlContainer{
+        display: inline-block;
+        width: 50vw;
+        *{
+            width: 30%;
+        }
     }
 }

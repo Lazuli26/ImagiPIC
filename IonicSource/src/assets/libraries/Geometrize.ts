@@ -3,7 +3,7 @@ import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeTypes, SvgExporter } from
 
 export interface GeometrizeClass {
     SetImage: (imageURL: string) => Promise<void>,
-    step: (steps: number) => Promise<[string, number]>,
+    step: (steps: number) => Promise<string[]>,
     generateSvg: (shapes: string[]) => string
 }
 
@@ -67,7 +67,7 @@ export class GeometrizeEngine implements GeometrizeClass {
         this.runner = new ImageRunner(this.bitmap)
     }
 
-    public async step(steps: number = 1): Promise<[string, number]> {
+    public async step(steps: number = 1): Promise<string[]> {
         if (this.runner !== undefined && this.bitmap !== undefined && this.iteration < this.maxIterations) {
             const newShapes = [];
             for (let i = 0; i < steps && this.iteration < this.maxIterations; i++) {
@@ -86,7 +86,7 @@ export class GeometrizeEngine implements GeometrizeClass {
                 svgElement.addClass("geometrizeView")
             }*/
         }
-        return ([this.generateSvg(this.shapes), this.shapes.length]);
+        return (this.shapes);
     }
     private stepTimeOut(): Promise<string> {
         return new Promise<string>(callback => {
