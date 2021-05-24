@@ -9,8 +9,8 @@ export interface GeometrizeClass {
 
 const defaultOptions = {
     shapeTypes: [ShapeTypes.ROTATED_ELLIPSE, ShapeTypes.TRIANGLE],
-    candidateShapesPerStep: 50,
-    shapeMutationsPerStep: 100,
+    candidateShapesPerStep: 25,
+    shapeMutationsPerStep: 50,
     alpha: 128
 }
 const defaultMaxIterations = 1000;
@@ -52,7 +52,7 @@ export class GeometrizeEngine implements GeometrizeClass {
         this.runner = undefined;
     }
     bitmap: Bitmap | undefined;
-    maxPixels = 160000;
+    maxPixels = 90000;
     async SetImage(imageURL: string): Promise<void> {
         this.shapes = [];
         this.iteration = 0;
