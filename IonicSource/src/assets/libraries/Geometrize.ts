@@ -13,7 +13,7 @@ const defaultOptions = {
     shapeMutationsPerStep: 50,
     alpha: 128
 }
-const defaultMaxIterations = 1000;
+const defaultMaxIterations = 2500;
 export class GeometrizeEngine implements GeometrizeClass {
     private _options: ImageRunnerOptions = defaultOptions;
 
@@ -52,7 +52,7 @@ export class GeometrizeEngine implements GeometrizeClass {
         this.runner = undefined;
     }
     bitmap: Bitmap | undefined;
-    maxPixels = 90000;
+    maxPixels = 250000;
     async SetImage(imageURL: string): Promise<void> {
         this.shapes = [];
         this.iteration = 0;
