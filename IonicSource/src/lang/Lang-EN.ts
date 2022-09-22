@@ -21,5 +21,9 @@ export const en: LanguageType = {
         guess_btn: "send",
         guess_txt_placeholder: "Word",
         guess_txt_title: "Guess"
+    },
+    session:{
+        sign_in: "Sign In",
+        sign_out: "Sign Out"
     }
 };

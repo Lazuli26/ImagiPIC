@@ -9,7 +9,7 @@ import {
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { ellipse, square, triangle } from 'ionicons/icons';
-import React, { createContext, useState } from 'react';
+import React, { createContext, useEffect, useMemo, useState } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import { Tab1 } from './pages/Tab1';
 import Tab2 from './pages/Tab2';
@@ -43,7 +43,7 @@ import 'firebaseui/dist/firebaseui.css';
 import { getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
 
-import { getAuth, signInWithPopup, GoogleAuthProvider, User, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, User, signInWithRedirect, getRedirectResult, onAuthStateChanged, OAuthCredential, UserCredential } from "firebase/auth";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -66,84 +66,105 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
 const provider = new GoogleAuthProvider();
+provider.addScope(
+  'https://www.googleapis.com/auth/contacts.readonly')
+
+provider.addScope(
+  'https://www.googleapis.com/auth/user.birthday.read')
 
 const auth = getAuth();
 
 export const AuthContext = createContext(auth)
+export const UserAuthContext = createContext<{ user: User, idToken: string } | null>(null)
 
+
+// Initialize the FirebaseUI Widget using Firebase.
+var ui = new firebaseui.auth.AuthUI(auth);
+
+//#endregion
 //@ts-ignore
 const App: React.FC = props => {
   const [user, setUser] = useState<User | null>(null);
-  const [userToken, setUserToken] = useState<string>()
+  const [idToken, setIdToken] = useState<string>()
+
+  //#region Firebase UI React
+  const firebaseUiConfig: firebaseui.auth.Config = useMemo(() => ({
+    callbacks:
+    {
+      signInSuccessWithAuthResult: (authResult: any, redirectUrl: any) => {
+        var user: User = authResult.user;
+        var credential:OAuthCredential = authResult.credential;
+        var isNewUser = authResult.additionalUserInfo.isNewUser;
+        var providerId = authResult.additionalUserInfo.providerId;
+        var operationType = authResult.operationType;
 
 
-
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // User is signed in, see docs for a list of available properties
-      // https://firebase.google.com/docs/reference/js/firebase.User
-      user.getIdToken().then(idToken => {
-
-        const credential = GoogleAuthProvider.credential(idToken)
-        const token = credential.accessToken;
-
-        setUser(user)
-        setUserToken(token)
-      })
-    } else {
-      // User is signed out
-      /*With redirect*/
-      getRedirectResult(auth).then(result => {
-        if (!result) {
-          signInWithRedirect(auth, provider);
-        }
-        else {
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-
-          if (credential) {
-
-            // This is the signed-in user
-            const user = result.user;
-            // This gives you a Google Access Token.
-            const token = credential.accessToken;
-
+        switch (providerId) {
+          case GoogleAuthProvider.PROVIDER_ID:
+            // const credential = GoogleAuthProvider.credentialFromResult(authResult)
             setUser(user)
-            setUserToken(token)
+            setIdToken(credential.idToken)
+            if (credential.accessToken) {
+              localStorage.setItem("sessionAccessToken", credential.accessToken)
+            }
+            break;
 
-            console.log(user, token)
-          }
+          default:
+            break;
         }
-      });
-
-      /* With popup
-        signInWithPopup(auth, provider)
-        .then((result) => {
-          // This gives you a Google Access Token. You can use it to access the Google API.
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-          if (credential) {
-            const token = credential.accessToken;
-            // The signed-in user info.
-            const user = result.user;
-            setUser(user)
-            setUserToken(token)
-          }
-          // ...
-        }).catch((error) => {
-          // Handle Errors here.
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          // The email of the user's account used.
-          const email = error.customData.email;
-          // The AuthCredential type that was used.
-          const credential = GoogleAuthProvider.credentialFromError(error);
-          // ...
-        });
-      */
+        // Do something with the returned AuthResult.
+        // Return type determines whether we continue the redirect
+        // automatically or whether we leave that to developer to handle.
+        return true;
+      }
     }
-  });
+
+    ,
+    // signInSuccessUrl: '<url-to-redirect-to-on-success>',
+    signInOptions: [{
+      provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+      scopes: [
+        'https://www.googleapis.com/auth/contacts.readonly',
+        'https://www.googleapis.com/auth/user.birthday.read'
+      ]
+    }
+      // Leave the lines as is for the providers you want to offer your users.
+      ,
+    //firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+    //firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+    //firebase.auth.GithubAuthProvider.PROVIDER_ID,
+    //firebase.auth.EmailAuthProvider.PROVIDER_ID,
+    //firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+    firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID
+    ],
+    // tosUrl and privacyPolicyUrl accept either url string or a callback
+    // function.
+    // Terms of service url/callback.
+    tosUrl: '<your-tos-url>',
+    // Privacy policy url/callback.
+    privacyPolicyUrl: function () {
+      window.location.assign('<your-privacy-policy-url>');
+    }
+  }), []);
 
 
-  return user ? <IonApp>
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        user.getIdToken().then(idToken => {
+          setUser(user)
+          setIdToken(idToken)
+        })
+      }
+      else
+      // The start method will wait until the DOM is loaded.`
+      ui.start('#firebaseui-auth-container', firebaseUiConfig);
+    })
+  }, [firebaseUiConfig])
+
+  return user && idToken ? <UserAuthContext.Provider value={{ user: user, idToken: idToken }}><IonApp>
     <IonReactRouter>
       <IonTabs>
         <IonRouterOutlet>
@@ -168,7 +189,8 @@ const App: React.FC = props => {
         </IonTabBar>
       </IonTabs>
     </IonReactRouter>
-  </IonApp> : "Logging in..."
+  </IonApp>
+  </UserAuthContext.Provider> : <div id="firebaseui-auth-container" />
 }
 
 export default App;

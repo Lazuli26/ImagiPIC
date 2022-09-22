@@ -21,5 +21,9 @@ export const es: LanguageType = {
         guess_btn: "Enviar",
         guess_txt_placeholder: "Palabra",
         guess_txt_title: "Adivinar"
+    },
+    session:{
+        sign_in: "Iniciar Sesión",
+        sign_out: "Cerrar Sesión"
     }
 };

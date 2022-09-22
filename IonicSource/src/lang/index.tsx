@@ -18,7 +18,7 @@ export interface LanguageType {
         /**Play Button text*/
         play_btn: string,
         /**Title in-page*/
-        title: string
+        title: string 
     },
     game: {
         /**Title of the message that shows up when the player enters on judge mode*/
@@ -37,6 +37,10 @@ export interface LanguageType {
         guess_txt_placeholder: string,
         /**The title of the guess TextField */
         guess_txt_title: string
+    },
+    session:{
+        sign_in: string,
+        sign_out: string
     }
 }
 
