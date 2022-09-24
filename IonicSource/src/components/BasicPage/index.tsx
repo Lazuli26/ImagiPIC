@@ -1,9 +1,10 @@
-import React, { ReactNode, useContext } from 'react';
 import { IonButton, IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
-import './index.scss'; import { getAuth, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
+import React, { ReactNode, useContext } from 'react';
 import { AuthContext } from '../../App';
-import { useAppSelector } from '../../reducers';
 import { langs } from '../../lang';
+import { useAppSelector } from '../../reducers';
+import './index.scss';
 
 interface BasicPageProps {
   title: ReactNode,

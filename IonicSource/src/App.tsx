@@ -43,10 +43,10 @@ import 'firebaseui/dist/firebaseui.css';
 import { getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
 
-import { getAuth, signInWithPopup, GoogleAuthProvider, User, signInWithRedirect, getRedirectResult, onAuthStateChanged, OAuthCredential, UserCredential } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, OAuthCredential, onAuthStateChanged, User } from "firebase/auth";
 
 // eslint-disable-next-line import/no-webpack-loader-syntax
-import Worker from "worker-loader!./assets/libraries/GeoWorker"
+import Worker from "worker-loader!./assets/libraries/GeoWorker";
 
 const worker = new Worker();
 
@@ -73,6 +73,8 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const analytics = getAnalytics(app);
 
 const provider = new GoogleAuthProvider();
@@ -104,8 +106,10 @@ const App: React.FC = props => {
       signInSuccessWithAuthResult: (authResult: any, redirectUrl: any) => {
         var user: User = authResult.user;
         var credential:OAuthCredential = authResult.credential;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         var isNewUser = authResult.additionalUserInfo.isNewUser;
         var providerId = authResult.additionalUserInfo.providerId;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         var operationType = authResult.operationType;
 
 

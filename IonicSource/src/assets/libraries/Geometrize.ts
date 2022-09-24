@@ -1,8 +1,8 @@
 
 // eslint-disable-next-line import/no-webpack-loader-syntax
-import Worker from "worker-loader!./GeoWorker"
+import Worker from "worker-loader!./GeoWorker";
 
-import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeTypes, SvgExporter } from 'geometrizejs'
+import { Bitmap } from 'geometrizejs';
 import { defaultMaxIterations } from "./Geo.defaults";
 import { geoEngineConfig, GeometrizeClass } from "./Geo.types";
 

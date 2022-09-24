@@ -1,8 +1,8 @@
 /* eslint-disable no-restricted-globals */
 // use import like you would in any other file
-import Jimp from 'jimp'
-import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeTypes, SvgExporter } from 'geometrizejs'
-import { defaultOptions, defaultMaxIterations } from './Geo.defaults';
+import { Bitmap, ImageRunner, ImageRunnerOptions, SvgExporter } from 'geometrizejs';
+import Jimp from 'jimp';
+import { defaultMaxIterations, defaultOptions } from './Geo.defaults';
 import { geoEngineConfig, GeometrizeClass } from './Geo.types';
 
 export class GeometrizeEngine implements GeometrizeClass {

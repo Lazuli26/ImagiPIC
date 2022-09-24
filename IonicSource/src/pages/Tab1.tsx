@@ -1,17 +1,17 @@
+import $ from 'jquery';
 import _ from 'lodash';
-import $ from 'jquery'
 
-import React from 'react';
 import { IonButton, IonInput } from '@ionic/react';
-import './Tab1.scss';
+import React from 'react';
 import { connect } from 'react-redux';
-import { langs, LanguageType } from '../lang';
-import { CombinedState } from '../reducers';
-import { ChangeLang } from '../reducers/language';
+import { geoEngineConfig } from '../assets/libraries/Geo.types';
 import { GeoWorkerInstance } from '../assets/libraries/Geometrize';
 import BasicPage from '../components/BasicPage';
 import SvgRenderer from '../components/SvgRenderer';
-import { geoEngineConfig } from '../assets/libraries/Geo.types';
+import { langs, LanguageType } from '../lang';
+import { CombinedState } from '../reducers';
+import { ChangeLang } from '../reducers/language';
+import './Tab1.scss';
 
 class Tab extends React.Component<stateProps & dispatchProps, {
   Running: boolean,
@@ -86,7 +86,7 @@ class Tab extends React.Component<stateProps & dispatchProps, {
   }
 
   render() {
-    const { imgSelected, Running, shapes, currentShape, shapesPerSecond } = this.state;
+    const { imgSelected, Running, shapes, currentShape } = this.state;
 
 
     return (
