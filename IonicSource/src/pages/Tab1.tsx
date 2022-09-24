@@ -72,6 +72,7 @@ class Tab extends React.Component<stateProps & dispatchProps, {
   }
 
   runAuto = () => {
+    // TODO: Receive only the new shapes 
     GeoWorkerInstance.Step(10).then((shapes) => {
       if (this.state.Running) {
         this.setState({ shapes, Running: this.state.Running && _.size(shapes) !== GeoWorkerInstance.MaxIterations }, () => {
