@@ -1,104 +1,85 @@
-import Jimp from 'jimp'
+
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import Worker from "worker-loader!./GeoWorker"
+
 import { Bitmap, ImageRunner, ImageRunnerOptions, ShapeTypes, SvgExporter } from 'geometrizejs'
+import { defaultMaxIterations } from "./Geo.defaults";
+import { geoEngineConfig, GeometrizeClass } from "./Geo.types";
 
-export interface GeometrizeClass {
-    SetImage: (imageURL: string) => Promise<void>,
-    step: (steps: number) => Promise<string[]>,
-    generateSvg: (shapes: string[]) => string
-}
 
-const defaultOptions = {
-    shapeTypes: [ShapeTypes.ROTATED_ELLIPSE, ShapeTypes.TRIANGLE],
-    candidateShapesPerStep: 25,
-    shapeMutationsPerStep: 50,
-    alpha: 128
-}
-const defaultMaxIterations = 2500;
-export class GeometrizeEngine implements GeometrizeClass {
-    private _options: ImageRunnerOptions = defaultOptions;
+class GeoWorkerInterface implements GeometrizeClass {
+    worker = new Worker();
+    get MaxIterations() {
+        return defaultMaxIterations
+    }
+    _bitmap: Bitmap | undefined
+    get bitmap() {
+        return this._bitmap
+    }
+    promiseResolveQueue = new Array<({
+        resolve: (value: any | PromiseLike<any>) => void,
+        reject: (reason: any) => any
+    })>()
 
-    /**Current options of the runner */
-    public get options(): ImageRunnerOptions {
-        return this._options;
-    }
-    public set options(value: ImageRunnerOptions) {
-        this._options = value;
-    }
-    iteration: number = 0;
-    maxIterations: number = defaultMaxIterations;
-    runner?: ImageRunner;
-
-    private _shapes: string[] = [];
-    /**Shapes currently stored */
-    public get shapes(): string[] {
-        return this._shapes;
-    }
-    public set shapes(value: string[]) {
-        this._shapes = value;
-    }
-
-    constructor(options?: ImageRunnerOptions, maxIterations?: number) {
-        this.Reset();
-        if (options)
-            this.options = options;
-        if (maxIterations)
-            this.maxIterations = maxIterations;
-    }
-    private Reset() {
-        this.iteration = 0;
-        this.maxIterations = defaultMaxIterations;
-        this.options = defaultOptions;
-        this.shapes = [];
-        this.runner = undefined;
-    }
-    bitmap: Bitmap | undefined;
-    maxPixels = 250000;
-    async SetImage(imageURL: string): Promise<void> {
-        this.shapes = [];
-        this.iteration = 0;
-        const image = await Jimp.read(imageURL);
-        const totalPixels = image.bitmap.width * image.bitmap.height;
-        if (totalPixels > this.maxPixels) {
-            const scale = Math.sqrt(totalPixels / this.maxPixels);
-            image.resize(Math.floor(image.bitmap.width / scale), Jimp.AUTO)
-        }
-        this.bitmap = Bitmap.createFromByteArray(image.bitmap.width,
-            image.bitmap.height, image.bitmap.data)
-        this.runner = new ImageRunner(this.bitmap)
-    }
-
-    public async step(steps: number = 1): Promise<string[]> {
-        if (this.runner !== undefined && this.bitmap !== undefined && this.iteration < this.maxIterations) {
-            const newShapes = [];
-            for (let i = 0; i < steps && this.iteration < this.maxIterations; i++) {
-                this.iteration++;
-                newShapes.push(await this.stepTimeOut())
+    constructor() {
+        this.worker.onmessage = (event) => {
+            // console.log("Received message from worker", event)
+            const { data: { type, value } } = event;
+            const currentPromise = this.promiseResolveQueue.shift()!
+            switch (type) {
+                case "SetImage":
+                    this._bitmap = value;
+                    currentPromise.resolve(value)
+                    break;
+                case "exception":
+                    currentPromise.reject(value)
+                    break;
+                default:
+                    currentPromise.resolve(value)
+                    break;
             }
-            this.shapes = this.shapes.concat(newShapes)
-            // in the browser:
-            /*const container = document.getElementById('svg-container');
-            if (container) {
-                container.innerHTML = svg;
-                const svgElement = $("#svg-container > svg").first();
-                svgElement.attr("viewBox", `0 0 ${this.bitmap?.width || 0} ${this.bitmap?.height || 0}`)
-                svgElement.removeAttr("height")
-                svgElement.removeAttr("width")
-                svgElement.addClass("geometrizeView")
-            }*/
         }
-        return (this.shapes);
     }
-    private stepTimeOut(): Promise<string> {
-        return new Promise<string>(callback => {
-            setTimeout(() => {
-                callback(SvgExporter.exportShapes((this.runner as ImageRunner).step(this.options)))
-            }, 100);
+    SetImage = (imageURL: string): Promise<Bitmap> => {
+        const result = new Promise<Bitmap>((resolve, reject) => {
+            this.promiseResolveQueue.push({ resolve, reject })
+            this.worker.postMessage({ type: "SetImage", value: imageURL })
         })
+
+        return result
+    };
+    Step = (steps = 1): Promise<string[]> => {
+
+        const result = new Promise<string[]>((resolve, reject) => {
+            this.promiseResolveQueue.push({ resolve, reject })
+            this.worker.postMessage({ type: "Step", value: steps })
+        })
+        return result;
+    };
+    GenerateSvg(shapes: string[]): Promise<string> {
+        const result = new Promise<string>((resolve, reject) => {
+            this.promiseResolveQueue.push({ resolve, reject })
+            this.worker.postMessage({ type: "Step", value: shapes })
+        })
+        return result;
     }
-    public generateSvg(shapes: string[]): string {
-        return SvgExporter.getSvgPrelude() +
-            SvgExporter.getSvgNodeOpen((this.bitmap?.width || 0), (this.bitmap?.height || 0)) +
-            shapes.join('\n') +
-            SvgExporter.getSvgNodeClose()
+
+    GetGeoOptions = (): Promise<geoEngineConfig> => {
+        const result = new Promise<geoEngineConfig>((resolve, reject) => {
+            this.promiseResolveQueue.push({ resolve, reject })
+            this.worker.postMessage({ type: "GetCurrentOptions" })
+        })
+        return result;
     }
+
+    SetGeoOptions = async (config: geoEngineConfig): Promise<geoEngineConfig> => {
+
+        const result = new Promise<geoEngineConfig>((resolve, reject) => {
+            this.promiseResolveQueue.push({ resolve, reject })
+            this.worker.postMessage({ type: "SetGeoOptions", value: config })
+        })
+        return result;
+    };
 }
+
+export const GeoWorkerInstance = new GeoWorkerInterface();

@@ -61,7 +61,8 @@
     "@types/react-redux": "^7.1.9",
     "geometrizejs": "0.0.18",
     "jimp": "0.16.1",
-    "react-redux": "7.2.1"
+    "react-redux": "7.2.1",
+    "worker-loader": "^3.0.8"
   },
   "description": "An Ionic project"
 }
