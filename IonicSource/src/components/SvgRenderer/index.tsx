@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import _, { isString } from 'lodash'
 import React, { FC, useEffect, useState } from 'react'
 import './index.scss';
 /*
@@ -37,7 +37,7 @@ const scaleToWindow = (minSize: number, maxSize: number): [number, number] => {
 
     return [minSize, maxSize]
 }
-const SvgRenderer: FC<{ shapes: string[], width: number, height: number }> = ({ shapes, width, height }) => {
+const SvgRenderer: FC<{ shapes: string[] | string, width: number, height: number }> = ({ shapes, width, height }) => {
     //const windowLandscape = window.innerWidth >= window.innerHeight;
     //const imgLandscape = width >= height;
     const [svgConfig, setViewBoxSize] = useState<svgConfig | null>(null)
@@ -60,7 +60,7 @@ const SvgRenderer: FC<{ shapes: string[], width: number, height: number }> = ({ 
         className="svgViewPort"
         children={
             <div className="svgElement" children={<>
-                <svg width={svgConfig.svg.width} height={svgConfig.svg.height} viewBox={`0 0 ${svgConfig.viewBox.width} ${svgConfig.viewBox.height}`} dangerouslySetInnerHTML={{ __html: shapes.join('\n') }} />                
+                <svg width={svgConfig.svg.width} height={svgConfig.svg.height} viewBox={`0 0 ${svgConfig.viewBox.width} ${svgConfig.viewBox.height}`} dangerouslySetInnerHTML={{ __html: isString(shapes) ? shapes : shapes.join('\n') }} />                
             </>} />
         } />
         : <></>

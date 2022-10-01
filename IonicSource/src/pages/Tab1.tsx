@@ -4,14 +4,15 @@ import _ from 'lodash';
 import { IonButton, IonInput } from '@ionic/react';
 import React from 'react';
 import { connect } from 'react-redux';
-import { geoEngineConfig } from '../assets/libraries/Geo.types';
-import { GeoWorkerInstance } from '../assets/libraries/Geometrize';
 import BasicPage from '../components/BasicPage';
 import SvgRenderer from '../components/SvgRenderer';
 import { langs, LanguageType } from '../lang';
 import { CombinedState } from '../reducers';
 import { ChangeLang } from '../reducers/language';
 import './Tab1.scss';
+import { GeometrizeOptions } from '../assets/libraries/Geometrize/Types';
+import { GeometrizeController } from '../assets/libraries/Geometrize/GeometrizeController';
+import { GeoPlayer } from '../components/GeometrizePlayer.tsx/GeoPlayer';
 
 class Tab extends React.Component<stateProps & dispatchProps, {
   Running: boolean,
@@ -19,11 +20,15 @@ class Tab extends React.Component<stateProps & dispatchProps, {
   shapes: string[],
   shapesPerSecond: number,
   currentShape: number,
-  currentGeoConfig: geoEngineConfig | null
+  currentGeoConfig: GeometrizeOptions | null,
+  maxIterations: number,
+  isControllerBusy: boolean
 }> {
   InputRef: any;
   ImageRef: any;
   StepRef: HTMLIonButtonElement | undefined;
+
+  geoController = new GeometrizeController()
   constructor(props: (stateProps & dispatchProps) | Readonly<stateProps & dispatchProps>) {
     super(props);
     this.InputRef = React.createRef();
@@ -32,13 +37,15 @@ class Tab extends React.Component<stateProps & dispatchProps, {
       Running: false,
       imgSelected: false,
       shapes: [],
-      shapesPerSecond: 10,
+      shapesPerSecond: 4,
       currentShape: 0,
-      currentGeoConfig: null
+      currentGeoConfig: null,
+      maxIterations: 3000,
+      isControllerBusy: false
     }
 
-    GeoWorkerInstance.GetGeoOptions().then(currentGeoConfig => {
-      this.setState({ currentGeoConfig })
+    this.geoController.subscribe((controllerState) => {
+      this.setState({ isControllerBusy: controllerState.busy })
     })
   }
 
@@ -57,12 +64,11 @@ class Tab extends React.Component<stateProps & dispatchProps, {
     if (this.shapeInterval == null) {
 
       this.shapeInterval = setInterval(() => {
-        if (this.state.currentShape >= (this.state.currentGeoConfig?.MaxIterations || 0)) {
-          debugger
+        if (this.state.currentShape >= (this.state.maxIterations || 0)) {
           this.clearShapeInterval()
         }
         this.setState(state => ({ ...state, currentShape: state.currentShape + 5 }))
-      }, 1000 / this.state.shapesPerSecond / 5)
+      }, 1000 / this.state.shapesPerSecond)
     }
   }
 
@@ -72,9 +78,13 @@ class Tab extends React.Component<stateProps & dispatchProps, {
   }
 
   runAuto = () => {
-    GeoWorkerInstance.Step(10).then((shapes) => {
+    this.geoController.step(10).then((newShapes) => {
       if (this.state.Running) {
-        this.setState({ shapes, Running: this.state.Running && _.size(shapes) !== GeoWorkerInstance.MaxIterations }, () => {
+        this.setState(state => {
+          const shapes = [...state.shapes, ...newShapes]
+          return ({ shapes, Running: this.state.Running && _.size(shapes) <= this.state.maxIterations })
+        }
+        , () => {
           if (this.shapeInterval == null && this.state.shapes.length > this.state.shapesPerSecond * 2) {
             this.startShapeInterval()
           }
@@ -86,14 +96,15 @@ class Tab extends React.Component<stateProps & dispatchProps, {
   }
 
   render() {
-    const { imgSelected, Running, shapes, currentShape } = this.state;
+    const { imgSelected, Running, shapes, currentShape, maxIterations } = this.state;
 
 
+    const renderShapes = shapes.slice(0, currentShape)
     return (
       <>
         <BasicPage title="ImagiPIC App">
           <div className="pageContent">
-            <SvgRenderer shapes={shapes.slice(0, currentShape)} width={GeoWorkerInstance.bitmap?.width ?? 0} height={GeoWorkerInstance.bitmap?.height ?? 0} />
+            <SvgRenderer shapes={renderShapes} width={this.geoController.currentBitMap?.width ?? 0} height={this.geoController.currentBitMap?.height ?? 0} />
             <div className="controlContainer">
               <IonButton
                 children="Escoger Imagen"
@@ -112,8 +123,8 @@ class Tab extends React.Component<stateProps & dispatchProps, {
                       const stepAmount = 1
                       this.setState({ Running: false });
                       $("#loadingDiv").show()
-                      GeoWorkerInstance.Step(stepAmount).then((shapes) => {
-                        this.setState({ shapes, currentShape: currentShape + stepAmount })
+                      this.geoController.step(stepAmount).then((shapes) => {
+                        this.setState(state => ({ shapes: [...state.shapes, ...shapes], currentShape: currentShape + stepAmount }))
                       }).finally(() => {
                         $("#loadingDiv").hide()
                       })
@@ -140,7 +151,7 @@ class Tab extends React.Component<stateProps & dispatchProps, {
               }
               <div style={{ display: "inline-block" }}>
                 <div id="loadingDiv" style={{ display: "none" }}>Cargando...</div><br />
-                {imgSelected && <span children={`Shapes: ${currentShape}/${_.size(shapes)}; shapes cap: ${this.state.currentGeoConfig?.MaxIterations}`} />}
+                {imgSelected && <span children={`Shapes: ${currentShape}/${_.size(shapes)}; shapes cap: ${maxIterations}`} />}
               </div>
               <IonInput type='number' onIonChange={e => {
                 this.setState({ currentShape: Math.min(parseInt(e.detail.value || "0"), shapes.length) })
@@ -148,6 +159,7 @@ class Tab extends React.Component<stateProps & dispatchProps, {
             </div>
 
           </div>
+            <GeoPlayer/>
           {/*<IonButton onClick={() => {
             props.changeLanguage(props.currentLanguage === "es" ? "en" : "es")
           }}>
@@ -167,7 +179,7 @@ class Tab extends React.Component<stateProps & dispatchProps, {
                 //@ts-ignore
                 this.ImageRef.current.src = reader.result;
               $("#loadingDiv").show()
-              GeoWorkerInstance.SetImage(reader.result as string).finally(() => {
+              this.geoController.initialize(reader.result as string).finally(() => {
                 $("#loadingDiv").hide()
                 this.setState({ imgSelected: true, shapes: [], currentShape: 0 })
                 this.StepRef?.click();

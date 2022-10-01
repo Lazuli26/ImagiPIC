@@ -45,15 +45,6 @@ import { initializeApp } from "firebase/app";
 
 import { getAuth, GoogleAuthProvider, OAuthCredential, onAuthStateChanged, User } from "firebase/auth";
 
-// eslint-disable-next-line import/no-webpack-loader-syntax
-import Worker from "worker-loader!./assets/libraries/GeoWorker";
-
-const worker = new Worker();
-
-worker.postMessage({ a: 1 });
-worker.onmessage = (event) => {};
-
-worker.addEventListener("message", (event) => {});
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
