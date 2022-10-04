@@ -9,9 +9,9 @@ export class GeometrizeController implements GeometrizeInstance {
     promiseCallbackQueue = new Array<PromiseCallBack>()
     currentBitMap?: Bitmap
 
-    private queueCallBack(resolve: PromiseCallBack["resolve"], reject: PromiseCallBack["reject"]) {
+    private queueCallBack(resolve: PromiseCallBack["resolve"], reject: PromiseCallBack["reject"], name: string) {
         let id = Math.max(...this.promiseCallbackQueue.map(v => v.id), 0) + 1
-        this.promiseCallbackQueue.push({ resolve, reject, id })
+        this.promiseCallbackQueue.push({ resolve, reject, id, name })
         this.broadCast()
         return id
     }
@@ -60,35 +60,35 @@ export class GeometrizeController implements GeometrizeInstance {
         this.startWorker()
 
         const result = new Promise<Bitmap>((resolve, reject) => {
-            const id = this.queueCallBack(resolve, reject)
+            const id = this.queueCallBack(resolve, reject, "initialize")
             this.postMessage({ type: "initialize", value: [imageURL, options], id })
         })
         return result;
     }
     step(steps = 1): Promise<string[]> {
         const result = new Promise<string[]>((resolve, reject) => {
-            const id = this.queueCallBack(resolve, reject)
+            const id = this.queueCallBack(resolve, reject, "step")
             this.postMessage({ type: "step", value: steps, id })
         })
         return result;
     }
     setOptions(options: GeometrizeOptions): Promise<void> {
         const result = new Promise<void>((resolve, reject) => {
-            const id = this.queueCallBack(resolve, reject)
+            const id = this.queueCallBack(resolve, reject, "setOptions")
             this.postMessage({ type: "setOptions", value: options, id })
         })
         return result;
     }
     getOPtions(): Promise<GeometrizeOptions | undefined> {
         const result = new Promise<GeometrizeOptions | undefined>((resolve, reject) => {
-            const id = this.queueCallBack(resolve, reject)
+            const id = this.queueCallBack(resolve, reject, "getOPtions")
             this.postMessage({ type: "getOPtions", id })
         })
         return result;
     }
     getShapesJSON(): Promise<string[]> {
         const result = new Promise<string[]>((resolve, reject) => {
-            const id = this.queueCallBack(resolve, reject)
+            const id = this.queueCallBack(resolve, reject, "getShapesJSON")
             this.postMessage({ type: "getShapesJSON", id })
         })
         return result;
@@ -102,7 +102,7 @@ export class GeometrizeController implements GeometrizeInstance {
      * @returns a function to unsubscribe
     */
     subscribe(subscriber: geoSubscription) {
-        let id = Math.max(...this.promiseCallbackQueue.map(v => v.id), 0) + 1
+        let id = Math.max(...this.subscriptions.map(v => v.id), 0) + 1
         this.subscriptions.push({ subscription: subscriber, id })
 
 

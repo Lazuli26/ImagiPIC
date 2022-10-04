@@ -16,7 +16,8 @@ export interface GeometrizeInstance {
 export type PromiseCallBack = {
     resolve: (value: any | PromiseLike<any>) => void,
     reject: (reason: any) => any,
-    id: number
+    id: number, 
+    name: string
 }
 export type geoControllerStatus = { busy: boolean, imageSelected: boolean, ready: boolean }
 export type geoSubscription = (state: geoControllerStatus) => void

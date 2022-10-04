@@ -3,13 +3,40 @@ import _ from "lodash"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GeoPlayerInfo, GeoPlayerOptions, numberInputParse } from "./GeoPlayer"
 
+const TakeOverInput = React.memo((props: React.ComponentPropsWithoutRef<typeof IonInput>) => {
+    const [isFocus, setFocus] = useState(false)
+    const [value, setValue] = useState(props.value)
+    const ref = useRef<HTMLIonInputElement>(null)
+    const onIonFocus = useCallback((...args: Parameters<NonNullable<typeof props["onIonFocus"]>>) => {
+        setFocus(true)
+        if (props.onIonFocus) props.onIonFocus(...args)
+    }, [props])
+
+    const onIonChange = useCallback((...args: Parameters<NonNullable<typeof props["onIonChange"]>>) => {
+        if (props.onIonChange && isFocus) props.onIonChange(...args)
+        setValue(args[0].detail.value)
+    }, [isFocus, props])
+
+    const onIonBlur = useCallback((...args: Parameters<NonNullable<typeof props["onIonBlur"]>>) => {
+        setFocus(false)
+        if (props.onIonBlur) props.onIonBlur(...args)
+    }, [props])
+
+    if (!isFocus && value !== props.value) setValue(props.value)
+    return <>
+        <IonInput ref={ref} {...props} onIonFocus={onIonFocus} onIonChange={onIonChange} onIonBlur={onIonBlur} value={isFocus ? value : props.value} />
+    </>
+})
+
+// eslint-disable-next-line react-hooks/exhaustive-deps
+const useDebounce = (func: (...args: any[]) => any, time: number) => useCallback(_.debounce(func, time), [func])
 
 const _BaseGeoPlayerControl: React.FC<{
     controllerInterface: GeoPlayerOptions,
     PlayerRef: React.RefObject<HTMLDivElement>,
     PlayerInfo: GeoPlayerInfo
 }> = ({ controllerInterface, PlayerInfo, PlayerRef }) => {
-    const { shapes_cap: _shapes_cap, speed: _speed, playing } = PlayerInfo
+    const { shapes_cap: _shapes_cap, speed: _speed, playing, shapes_shown } = PlayerInfo
 
     const [shapes_cap, setShapesCap] = useState(_shapes_cap)
     const [speed, setSpeed] = useState(_speed)
@@ -41,13 +68,13 @@ const _BaseGeoPlayerControl: React.FC<{
         }
     }, [controllerInterface])
 
-    const [isControllerBussy, changeBusyStatus] = useState(false);
+    const [, changeBusyStatus] = useState(false);
 
     // To indicate if the controller is currently processing
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const changeBusyStatus_debounce = useCallback(
         _.debounce(changeBusyStatus, 250),
-        [isControllerBussy]
+        []
     )
 
     const unsubscribe = useMemo(() => controllerInterface.ControllerInstance.current.subscribe((geoStatus) => {
@@ -62,9 +89,9 @@ const _BaseGeoPlayerControl: React.FC<{
         }
     }, [unsubscribe])
 
-    const setCapDebounced = useMemo(() => _.debounce((val: number) => {
+    const setCapDebounced = useDebounce((val: number) => {
         setShapesCap(controllerInterface.set_cap(val))
-    }, 500), [controllerInterface])
+    }, 500)
 
     const onChangeShapeCap = useCallback(e => {
         const value = numberInputParse(e);
@@ -72,13 +99,21 @@ const _BaseGeoPlayerControl: React.FC<{
         setCapDebounced(value)
     }, [setCapDebounced])
 
-    const setSpeedDebounced = useMemo(() => _.debounce(controllerInterface.set_speed, 500), [controllerInterface.set_speed])
+    const setSpeedDebounced = useDebounce(controllerInterface.set_speed, 500)
     const onChangeSpeed = useCallback(e => {
         const value = numberInputParse(e);
 
         setSpeed(value)
         setSpeedDebounced(value)
     }, [setSpeedDebounced])
+
+    const jump_to = useDebounce((val: number) => controllerInterface.jump_to(val), 1000)
+    const moveCursor = useCallback(e => {
+
+        const value = numberInputParse(e);
+        jump_to(value)
+    }, [jump_to])
+
     return <>
         <IonItem>
             <IonLabel children="Shapes cap" position="stacked" />
@@ -101,8 +136,18 @@ const _BaseGeoPlayerControl: React.FC<{
             />
         </IonItem>
         <IonItem>
-            <IonLabel children="Pre-generate shapes" position="stacked" />
-            <IonCheckbox checked={controllerInterface.background_loading()} onIonChange={toggleBackgroundLoading} />
+            <IonLabel children={`Move Cursor ${PlayerInfo.shapes_shown}/${PlayerInfo.shapes_loaded}`} position="stacked" />
+            <TakeOverInput
+                type="number"
+                inputmode="numeric"
+
+                value={shapes_shown}
+                onIonChange={moveCursor}
+            />
+        </IonItem>
+        <IonItem>
+            <IonLabel children={PlayerInfo.background_loading ? "Shapes will be generated as soon as possible" : "Shapes will be generated on-demand"} position="stacked" />
+            <IonCheckbox checked={PlayerInfo.background_loading} onIonChange={toggleBackgroundLoading} />
         </IonItem>
 
         <IonButton onClick={togglePlay} children={playing ? "Pause" : "Play"} />

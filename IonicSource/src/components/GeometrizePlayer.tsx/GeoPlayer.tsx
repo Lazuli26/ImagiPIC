@@ -1,6 +1,5 @@
 import { InputChangeEventDetail } from "@ionic/core";
-import { IonButton, IonCheckbox, IonInput, IonItem, IonLabel } from "@ionic/react";
-import { Bitmap, } from "geometrizejs";
+import { Bitmap } from "geometrizejs";
 import _ from "lodash";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultOptions } from "../../assets/libraries/Geometrize/defaults";
@@ -15,6 +14,7 @@ export type GeoPlayerInfo = {
     shapes_loaded: number,
     shapes_shown: number,
     shapes_cap: number,
+    background_loading: boolean,
     playing: boolean,
     speed: number,
     is_image_set: boolean,
@@ -79,7 +79,7 @@ export const GeoPlayer: React.FC<{}> = (props) => {
 
     // Play/Pause control
     const playing = useStateRef(false)
-    const play_pause = useCallback((state) => {
+    const play_pause = useCallback((state?) => {
         if (state === undefined) return (playing.val)
         else {
             const result = state ?? !playing.val
@@ -109,6 +109,7 @@ export const GeoPlayer: React.FC<{}> = (props) => {
     const _options = useStateRef<GeometrizeOptions>(defaultOptions)
     const options = useCallback((options?: Partial<GeometrizeOptions>) => {
         return new Promise<GeometrizeOptions>((resolve, reject) => {
+
             _options.set(currentOptions => {
                 const newOptions = ({ ...currentOptions, ...options })
                 GeoController.setOptions(newOptions)
@@ -123,13 +124,18 @@ export const GeoPlayer: React.FC<{}> = (props) => {
     const shapeCursor = useStateRef(0)
     const jump_to = useCallback((shapeNumber: number): Promise<number> => new Promise((resolve, reject) => {
         shapes.set(shapes => {
-            const newCursorPosition = _.min([shapeNumber, shapes.length - 1, 0])!
+            const was_playing = play_pause()
+            play_pause(false)
+
+            const newCursorPosition = _.max([_.min([shapeNumber, shapes.length]), 0])!
             shapeCursor.set(newCursorPosition)
 
+
+            play_pause(was_playing)
             resolve(newCursorPosition)
             return shapes
         })
-    }), [shapeCursor, shapes])
+    }), [play_pause, shapeCursor, shapes])
 
     const Image = useStateRef<Bitmap>()
     const set_image = useCallback((ImageSrc: string) => {
@@ -143,26 +149,6 @@ export const GeoPlayer: React.FC<{}> = (props) => {
         })
     }, [GeoController, Image, shapeCursor, shapes])
 
-    // Get basic player information
-    const get_info = useCallback((): GeoPlayerInfo => {
-        return {
-            shapes_loaded: shapes.val.length,
-            shapes_shown: shapeCursor.val,
-            shapes_cap: targetShapes.val,
-            playing: playing.val,
-            speed: speed.val,
-            is_image_set: !!Image.val,
-            current_options: _options.val,
-        }
-    }, [Image, _options, playing, shapeCursor, shapes, speed, targetShapes])
-
-    const currentPlayerInfo = useStateRef(get_info())
-    currentPlayerInfo.set(get_info())
-    // Get shapes as JSON objects
-    const get_JSON_shapes = useCallback(() => {
-        return GeoController.getShapesJSON()
-    }, [GeoController]);
-
     // Enable/Disable background loading
 
     // Controls if the player should generate images automatically on the background
@@ -174,6 +160,28 @@ export const GeoPlayer: React.FC<{}> = (props) => {
             return val
         }
     }, [backgroundLoading])
+
+    // Get basic player information
+    const get_info = useCallback((): GeoPlayerInfo => {
+        return {
+            shapes_loaded: shapes.val.length,
+            shapes_shown: shapeCursor.val,
+            shapes_cap: targetShapes.val,
+            background_loading: backgroundLoading.val,
+            playing: playing.val,
+            speed: speed.val,
+            is_image_set: !!Image.val,
+            current_options: _options.val,
+        }
+    }, [Image.val, _options.val, backgroundLoading, playing.val, shapeCursor.val, shapes.val.length, speed.val, targetShapes.val])
+
+    const currentPlayerInfo = useStateRef(get_info())
+    currentPlayerInfo.set(get_info())
+    // Get shapes as JSON objects
+    const get_JSON_shapes = useCallback(() => {
+        return GeoController.getShapesJSON()
+    }, [GeoController]);
+
     // controls to expose to other components
     const PlayerUI = useMemo<GeoPlayerOptions>(() => ({
         background_loading,
@@ -210,19 +218,22 @@ export const GeoPlayer: React.FC<{}> = (props) => {
         }
     }, [GeoController, controllerSubscribtion])
 
+    const step = useCallback(steps => {
+        GeoController.step(steps).then(newShapes => {
+            const _shapes = [...shapes.val, ...newShapes]
+            shapes.set(_shapes)
+        })
+    }, [GeoController, shapes])
     // Shape generator effect
     useEffect(() => {
         if (Image.val && backgroundLoading.val) {
 
             const remainingShapes = targetShapes.val - shapes.val.length
             if (remainingShapes > 0) {
-                GeoController.step(_.min([10, remainingShapes])).then(newShapes => {
-                    const _shapes = [...shapes.val, ...newShapes]
-                    shapes.set(_shapes)
-                })
+                step(_.min([10, remainingShapes]))
             }
         }
-    }, [GeoController, Image.val, backgroundLoading.val, shapes, shapes.val.length, targetShapes.val])
+    }, [GeoController, Image.val, backgroundLoading.val, shapes, shapes.val.length, step, targetShapes.val])
 
     // Update frequency
     const updateFreq = useStateRef<NodeJS.Timeout>()
@@ -232,14 +243,15 @@ export const GeoPlayer: React.FC<{}> = (props) => {
 
         if (playing.val) {
             const targetFrequency = _.max([1000 / MAX_UPDATES_PER_SECOND, 1000 / speed.val]) ?? 1000
-            const changesPerUpdate = Math.ceil(targetFrequency / 1000) * speed.val
+            const changesPerUpdate = Math.ceil((targetFrequency / 1000) * speed.val)
             updateFreq.set(setInterval(() => {
-                if (!backgroundLoading.val && !isControllerBussy.val)
-                    GeoController.step(changesPerUpdate)
+                if (!backgroundLoading.val && !isControllerBussy.val && shapeCursor.val >= shapes.val.length - speed.val*2)
+                    step(speed.val)
+
                 shapeCursor.set(current => _.max([_.min([shapes.val.length, current + changesPerUpdate])!, 0])!)
             }, targetFrequency))
         }
-    }, [GeoController, backgroundLoading, isControllerBussy, playing.val, shapeCursor, shapes, speed.val, updateFreq])
+    }, [GeoController, backgroundLoading, isControllerBussy, playing.val, shapeCursor, shapes, speed.val, step, updateFreq])
 
 
     // Lifecycle effect
