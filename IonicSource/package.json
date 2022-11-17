@@ -26,7 +26,7 @@
     "node-sass": "^6.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-firebaseui": "^6.0.0",
+    "react-redux": "^8.0.5",
     "react-router": "^5.1.2",
     "react-router-dom": "^5.1.2",
     "react-scripts": "^4.0.3",
@@ -61,7 +61,6 @@
     "@types/react-redux": "^7.1.9",
     "geometrizejs": "0.0.18",
     "jimp": "0.16.1",
-    "react-redux": "7.2.1",
     "worker-loader": "^3.0.8"
   },
   "description": "An Ionic project"
