@@ -5,7 +5,8 @@ import {
   IonRouterOutlet,
   IonTabBar,
   IonTabButton,
-  IonTabs
+  IonTabs,
+  setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { ellipse, square, triangle } from 'ionicons/icons';
@@ -45,6 +46,9 @@ import { initializeApp } from "firebase/app";
 
 import { getAuth, GoogleAuthProvider, OAuthCredential, onAuthStateChanged, User } from "firebase/auth";
 
+setupIonicReact({
+  mode: 'md'
+});
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -129,8 +133,6 @@ const App: React.FC = props => {
     signInOptions: [{
       provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
       scopes: [
-        'https://www.googleapis.com/auth/contacts.readonly',
-        'https://www.googleapis.com/auth/user.birthday.read'
       ]
     }
       // Leave the lines as is for the providers you want to offer your users.
@@ -140,7 +142,7 @@ const App: React.FC = props => {
     //firebase.auth.GithubAuthProvider.PROVIDER_ID,
     //firebase.auth.EmailAuthProvider.PROVIDER_ID,
     //firebase.auth.PhoneAuthProvider.PROVIDER_ID,
-    firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID
+    //firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID
     ],
     // tosUrl and privacyPolicyUrl accept either url string or a callback
     // function.

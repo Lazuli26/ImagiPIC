@@ -1,8 +1,8 @@
-import { IonItem, IonLabel, IonInput, IonCheckbox, IonButton } from "@ionic/react"
+import { IonItem, IonLabel, IonInput, IonCheckbox, IonButton, IonProgressBar, IonRange } from "@ionic/react"
 import _ from "lodash"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { GeoPlayerInfo, GeoPlayerOptions, numberInputParse } from "./GeoPlayer"
-
+import { GeoPlayerInfo, GeoPlayerOptions, numberInput, numberInputParse } from "./GeoPlayer"
+import { PlayerBar } from "./PlayerBar";
 const TakeOverInput = React.memo((props: React.ComponentPropsWithoutRef<typeof IonInput>) => {
     const [isFocus, setFocus] = useState(false)
     const [value, setValue] = useState(props.value)
@@ -93,14 +93,14 @@ const _BaseGeoPlayerControl: React.FC<{
         setShapesCap(controllerInterface.set_cap(val))
     }, 500)
 
-    const onChangeShapeCap = useCallback(e => {
+    const onChangeShapeCap = useCallback((e: numberInput) => {
         const value = numberInputParse(e);
         setShapesCap(value)
         setCapDebounced(value)
     }, [setCapDebounced])
 
     const setSpeedDebounced = useDebounce(controllerInterface.set_speed, 500)
-    const onChangeSpeed = useCallback(e => {
+    const onChangeSpeed = useCallback((e: numberInput) => {
         const value = numberInputParse(e);
 
         setSpeed(value)
@@ -108,7 +108,7 @@ const _BaseGeoPlayerControl: React.FC<{
     }, [setSpeedDebounced])
 
     const jump_to = useDebounce((val: number) => controllerInterface.jump_to(val), 1000)
-    const moveCursor = useCallback(e => {
+    const moveCursor = useCallback((e: numberInput) => {
 
         const value = numberInputParse(e);
         jump_to(value)
@@ -122,7 +122,7 @@ const _BaseGeoPlayerControl: React.FC<{
                 inputmode="numeric"
 
                 value={shapes_cap}
-                onIonChange={onChangeShapeCap}
+                onInput={onChangeShapeCap}
             />
         </IonItem>
         <IonItem>
@@ -132,7 +132,7 @@ const _BaseGeoPlayerControl: React.FC<{
                 inputmode="numeric"
 
                 value={speed}
-                onIonChange={onChangeSpeed}
+                onInput={onChangeSpeed}
             />
         </IonItem>
         <IonItem>
@@ -142,7 +142,7 @@ const _BaseGeoPlayerControl: React.FC<{
                 inputmode="numeric"
 
                 value={shapes_shown}
-                onIonChange={moveCursor}
+                onInput={moveCursor}
             />
         </IonItem>
         <IonItem>
@@ -150,8 +150,8 @@ const _BaseGeoPlayerControl: React.FC<{
             <IonCheckbox checked={PlayerInfo.background_loading} onIonChange={toggleBackgroundLoading} />
         </IonItem>
 
+        <PlayerBar Playing={playing} TogglePause={togglePlay} MoveCursor={controllerInterface.jump_to} totalFrames={PlayerInfo.shapes_cap} cursorPosition={PlayerInfo.shapes_shown} bufferSize={PlayerInfo.shapes_loaded}/>
         <IonButton onClick={togglePlay} children={playing ? "Pause" : "Play"} />
-        Current shapes
         <IonButton
             disabled={playing}
             children="Escoger Imagen"

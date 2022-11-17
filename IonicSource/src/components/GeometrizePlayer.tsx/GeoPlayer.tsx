@@ -1,7 +1,7 @@
-import { InputChangeEventDetail } from "@ionic/core";
+import { InputChangeEventDetail } from "@ionic/core/components";
 import { Bitmap } from "geometrizejs";
 import _ from "lodash";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultOptions } from "../../assets/libraries/Geometrize/defaults";
 import { GeometrizeController } from "../../assets/libraries/Geometrize/GeometrizeController";
 import { GeometrizeOptions } from "../../assets/libraries/Geometrize/Types";
@@ -60,11 +60,11 @@ function useStateRef<T>(default_value: T): stateRefReturn<T>["current"] {
     return valueRef.current
 }
 
-type numberInput = number | string | CustomEvent<InputChangeEventDetail>;
+export type numberInput = number | string | React.FormEvent<HTMLIonInputElement>;
 export const numberInputParse = (value: numberInput) => {
     if (_.isNumber(value)) return value
     else
-        return parseInt(_.isString(value) ? value : value.detail.value ?? "")
+        return parseInt(_.isString(value) ? value : value.currentTarget.value as string ?? "")
 
 }
 
@@ -244,14 +244,16 @@ export const GeoPlayer: React.FC<{}> = (props) => {
         if (playing.val) {
             const targetFrequency = _.max([1000 / MAX_UPDATES_PER_SECOND, 1000 / speed.val]) ?? 1000
             const changesPerUpdate = Math.ceil((targetFrequency / 1000) * speed.val)
+            
+            const remainingShapes = targetShapes.val - shapes.val.length
             updateFreq.set(setInterval(() => {
                 if (!backgroundLoading.val && !isControllerBussy.val && shapeCursor.val >= shapes.val.length - speed.val*2)
-                    step(speed.val)
+                    step(_.min([remainingShapes, speed.val]))
 
                 shapeCursor.set(current => _.max([_.min([shapes.val.length, current + changesPerUpdate])!, 0])!)
             }, targetFrequency))
         }
-    }, [GeoController, backgroundLoading, isControllerBussy, playing.val, shapeCursor, shapes, speed.val, step, updateFreq])
+    }, [GeoController, backgroundLoading, isControllerBussy, playing.val, shapeCursor, shapes, speed.val, step, targetShapes, updateFreq])
 
 
     // Lifecycle effect
