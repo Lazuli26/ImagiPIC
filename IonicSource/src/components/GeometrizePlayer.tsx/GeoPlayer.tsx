@@ -1,7 +1,7 @@
-import { InputChangeEventDetail } from "@ionic/core/components";
+
 import { Bitmap } from "geometrizejs";
 import _ from "lodash";
-import React, { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {  useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { defaultOptions } from "../../assets/libraries/Geometrize/defaults";
 import { GeometrizeController } from "../../assets/libraries/Geometrize/GeometrizeController";
 import { GeometrizeOptions } from "../../assets/libraries/Geometrize/Types";

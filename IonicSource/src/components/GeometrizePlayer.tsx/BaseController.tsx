@@ -1,4 +1,4 @@
-import { IonItem, IonLabel, IonInput, IonCheckbox, IonButton, IonProgressBar, IonRange } from "@ionic/react"
+import { IonItem, IonLabel, IonInput, IonCheckbox, IonButton } from "@ionic/react"
 import _ from "lodash"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GeoPlayerInfo, GeoPlayerOptions, numberInput, numberInputParse } from "./GeoPlayer"

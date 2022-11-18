@@ -1,7 +1,6 @@
 import { IonRange, IonProgressBar } from "@ionic/react";
 import _ from "lodash";
-import React, { CSSProperties, useMemo, useState } from "react"
-import { numberInput } from "./GeoPlayer";
+import React, { CSSProperties, useState } from "react"
 
 import './PlayerBar.css';
 type PlayerBarProps = {
