@@ -2,6 +2,16 @@
 // overlays are real; deterministic shapes avoid expensive worker computation.
 import React, { useEffect } from 'react';
 
+export class GeometrizeController {
+  private types: number[] = [];
+  async initialize(_image: string, options: any) { this.types = options.shapeTypes; return { width: 100, height: 100 }; }
+  async step() { return []; }
+  async getShapesCompact() {
+    return this.types.map((_type, index) => [6, 0xffd78bff, 4, index * 12, index * 12, 40, 40]);
+  }
+  dispose() {}
+}
+
 export const GeoPlayer = ({ playerUiRef }: any) => {
   useEffect(() => {
     let cap = 250;

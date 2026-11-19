@@ -17,6 +17,8 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), 'imagipic-mobile-'));
 async function main() {
   const compiler = webpack({
     mode: 'development', devtool: false, context: root,
+    // Match react-scripts' browser build for Jimp's optional filesystem path.
+    node: { fs: 'empty' },
     entry: path.join(__dirname, 'mobile-fixture.tsx'),
     output: { path: output, filename: 'fixture.js', publicPath: '/' },
     resolve: { extensions: ['.tsx', '.ts', '.js'], modules: [path.join(root, 'node_modules'), 'node_modules'] },
@@ -33,10 +35,12 @@ async function main() {
       /GeometrizePlayer\.tsx\/GeoPlayer$/, path.join(__dirname, 'editor-fixture-engine.tsx'),
     ), new webpack.NormalModuleReplacementPlugin(
       /utils\/googleProgrammableSearch$/, path.join(__dirname, 'editor-fixture-search.ts'),
-    )],
+    ), ...(process.env.REAL_STYLE_PREVIEW ? [] : [new webpack.NormalModuleReplacementPlugin(
+      /assets\/libraries\/Geometrize\/GeometrizeController$/, path.join(__dirname, 'editor-fixture-engine.tsx'),
+    )])],
   });
   await new Promise((resolve, reject) => compiler.run((error, stats) => {
-    if (error || stats.hasErrors()) reject(error || new Error(stats.toString({ all: false, errors: true })));
+    if (error || stats.hasErrors()) reject(error || new Error(stats.toString({ all: false, errors: true, errorDetails: true, children: true })));
     else resolve();
   }));
   const server = http.createServer((req, res) => {
@@ -56,7 +60,7 @@ async function main() {
         ? { executablePath: process.env.CHROME_PATH } : engine === 'webkit' && process.env.WEBKIT_PATH
           ? { executablePath: process.env.WEBKIT_PATH } : {});
       try {
-        for (const width of [320, 390, 430, 1280]) {
+        for (const width of (process.env.TEST_WIDTHS || '320,390,430,1280').split(',').map(Number)) {
           const context = await browser.newContext({ viewport: { width, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
           const page = await context.newPage();
           const errors = [];
@@ -177,6 +181,15 @@ async function main() {
           await page.getByRole('button', { name: 'Confirmar imagen y modificador' }).click();
           await page.waitForFunction(() => document.querySelectorAll('ion-modal:not(.overlay-hidden)').length === 0);
           assert.deepEqual(await page.evaluate(() => window.fixture.currentRound.imageModifier), { type: 'shuffle', seed: 'mis-figuras' });
+          const judgeImage = page.locator('.judge-art-stage svg.geometric-image');
+          const imageBeforeToggle = await judgeImage.innerHTML();
+          const controlsBox = await page.locator('.judge-action-bar').boundingBox();
+          const stageBox = await page.locator('.judge-art-stage').boundingBox();
+          assert(controlsBox.y >= stageBox.y && controlsBox.y + controlsBox.height <= stageBox.y + stageBox.height + 1, `${engine}/${width}: controls do not float within the image`);
+          await page.getByRole('button', { name: 'Ocultar controles del juez', exact: true }).click();
+          assert.equal(await page.locator('.judge-action-bar').count(), 0);
+          assert.equal(await judgeImage.innerHTML(), imageBeforeToggle);
+          await page.getByRole('button', { name: 'Mostrar controles del juez', exact: true }).click();
           await page.getByText('Permitir inicio sin esperar a todos', { exact: true }).click();
           await page.getByRole('button', { name: /Iniciar turno/ }).click();
           await page.waitForFunction(() => !document.querySelector('.image-modifiers'));
@@ -198,6 +211,17 @@ async function main() {
           await page.screenshot({ path: path.join(output, `${engine}-${width}-all-correct.png`) });
           await page.getByRole('button', { name: 'Saltar a los puntos' }).click();
           await page.waitForFunction(() => window.fixture.currentRound.state === 'ADJUDICATION_CLOSED');
+          await page.evaluate(() => window.fixture.scoreboard());
+          await page.getByRole('heading', { name: 'Así va la partida' }).waitFor();
+          const scoreBox = await page.locator('.scores-card').boundingBox();
+          if (width <= 760) {
+            assert.equal(await page.getByRole('img', { name: 'Imagen completa del turno' }).count(), 0);
+            assert(scoreBox.y >= 0 && scoreBox.y + scoreBox.height <= 844, `${engine}/${width}: standings not visible first`);
+            await page.getByRole('button', { name: 'Ver imagen del turno', exact: true }).click();
+            assert.equal(await page.getByRole('img', { name: 'Imagen completa del turno' }).count(), 1);
+            await page.getByRole('button', { name: 'Ocultar imagen del turno', exact: true }).click();
+          }
+          await page.screenshot({ path: path.join(output, `${engine}-${width}-standings.png`) });
 
           // Search-first editor: real search form, image import, compact
           // controls, fixed footer, generation and save overlay dismissal.
@@ -213,6 +237,13 @@ async function main() {
           await page.getByRole('button', { name: 'Usar esta imagen', exact: true }).click();
           await page.getByText('Imagen preparada · 100 × 100 px', { exact: true }).waitFor();
           await page.getByRole('button', { name: 'Continuar →', exact: true }).click();
+          await page.getByText('Ponle nombre a tu carta', { exact: false }).waitFor();
+          await page.getByText('Vista previa de la mezcla', { exact: true }).waitFor();
+          await page.getByRole('button', { name: 'Círculo', exact: true }).click();
+          await page.waitForFunction(real => { const count = document.querySelector('.builder-style-preview svg')?.children.length || 0; return real ? count >= 24 : count === 3; }, !!process.env.REAL_STYLE_PREVIEW);
+          await page.getByRole('button', { name: 'Ver original', exact: true }).click();
+          assert.equal(await page.locator('.builder-style-preview img').count(), 1);
+          await page.getByRole('button', { name: 'Ver mezcla', exact: true }).click();
           const scrollDelta = () => page.locator('.deck-builder-modal:not(.overlay-hidden) ion-content').evaluate(async content => {
             const scroll = await content.getScrollElement();
             return scroll.scrollHeight - scroll.clientHeight;

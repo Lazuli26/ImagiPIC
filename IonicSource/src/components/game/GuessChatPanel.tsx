@@ -22,7 +22,7 @@ import { db } from '../../firebase/firebaseApp';
 import { useGuesses } from '../../game/useGuesses';
 import type { GuessDoc, RoundDoc, RoomPlayer, Verdict, CorrectStars } from '../../types/database';
 
-import { correctStars, STAR_BASE_POINTS } from '../../game/scoring';
+import { correctStars, MAX_SPEED_BONUS, STAR_BASE_POINTS, STAR_DESCRIPTIONS } from '../../game/scoring';
 
 type GuessPanelViewMode = 'full' | 'groupsOnly';
 
@@ -484,7 +484,7 @@ const GuessChatPanel: React.FC<GuessChatPanelProps> = ({
         </div>
         <div style={{ marginBottom: '6px' }}>
           <IonText color="medium" style={{ fontSize: '11px' }}>
-            1★: 30 · 2★: 60 · 3★: 90 puntos + hasta 10 por rapidez. Puedes cambiar las estrellas hasta cerrar la revisión.
+            1★: {STAR_BASE_POINTS[1]} · 2★: {STAR_BASE_POINTS[2]} · 3★: {STAR_BASE_POINTS[3]} puntos + hasta {MAX_SPEED_BONUS} por rapidez. Puedes cambiar las estrellas hasta cerrar la revisión.
             <br />
             {groups.length} respuestas distintas
             {' · '}
@@ -558,7 +558,7 @@ const GuessChatPanel: React.FC<GuessChatPanelProps> = ({
                         onClick={() => applyGroupVerdict(group, 'CORRECT', stars)}
                         aria-label={`Dar ${stars} ${stars === 1 ? 'estrella' : 'estrellas'} a ${group.textDisplay}`}
                         aria-pressed={isCorrect && group.stars === stars}
-                        title={`${STAR_BASE_POINTS[stars]} puntos + hasta 10 por rapidez`}
+                        title={`${STAR_DESCRIPTIONS[stars]} · ${STAR_BASE_POINTS[stars]} puntos + hasta ${MAX_SPEED_BONUS} por rapidez`}
                       >{'★'.repeat(stars)}</IonButton>)}
                       <IonButton size="small" fill="clear" color="medium" disabled={buttonsDisabled || group.verdict === null}
                         onClick={() => applyGroupVerdict(group, null)} aria-label={`Dejar ${group.textDisplay} pendiente`}>Deshacer</IonButton>

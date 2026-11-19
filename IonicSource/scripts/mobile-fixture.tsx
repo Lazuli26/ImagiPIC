@@ -7,6 +7,7 @@ import '@ionic/react/css/typography.css';
 import '../src/theme/variables.css';
 import '../src/pages/Room.css';
 import TurnPlayback from '../src/components/game/TurnPlayback';
+import Scoreboard from '../src/components/game/Scoreboard';
 import TurnSetupModal from '../src/components/TurnSetupModal';
 import DeckBuilderModal from '../src/components/DeckBuilderModal';
 import JoinRoomModal from '../src/components/JoinRoomModal';
@@ -45,6 +46,8 @@ const Fixture = () => {
   const [joinOpen, setJoinOpen] = useState(false);
   const [joined, setJoined] = useState('');
   const [roomClicks, setRoomClicks] = useState(0);
+  const [scoreboardOpen, setScoreboardOpen] = useState(false);
+  const players = [{ uid: 'player', displayName: 'Ana' }, { uid: 'judge', displayName: 'Presentador' }] as any;
   useEffect(() => {
     const update = (event: Event) => setCurrentRound((value: any) => ({ ...value, ...(event as CustomEvent).detail }));
     window.addEventListener('fixture-round-update', update);
@@ -62,12 +65,17 @@ const Fixture = () => {
       setSelectionLocked(false); setPreviewOpen(true); setIsJudge(true);
     },
     builder: () => { setSaved(false); setBuilderOpen(true); },
+    scoreboard: () => setScoreboardOpen(true),
   };
   return <IonApp>{joined ? <IonPage><IonContent><h1>Sala {joined}</h1><button onClick={() => setRoomClicks(value => value + 1)}>Comprobar sala</button><p>Interacciones: {roomClicks}</p></IonContent></IonPage> : <IonPage ref={ref} className="game-room">
     <IonHeader><IonToolbar><IonTitle>Turno de prueba</IonTitle></IonToolbar></IonHeader>
-    <IonContent scrollY={false}><div style={{ height: '100%', width: '100%' }}><TurnPlayback code="TEST12"
+    <IonContent scrollY={scoreboardOpen}><div style={{ height: '100%', width: '100%' }}>{scoreboardOpen
+      ? <Scoreboard room={{ players, cumulativeScores: { player: 180, judge: 140 }, roundIndex: 0, totalTurns: 4, scoreboardTimerSecs: 0 } as any}
+        round={{ ...round, state: 'SCORED', results: { scoringVersion: 2, guesserCount: 1, breakdown: { player: { base: 80, speed: 10 }, judge: { base: 80, speed: 0 } } } }}
+        guesses={answers} players={players} perPlayerScores={{ player: 90, judge: 80 }} rankOrder={['player', 'judge']} isHost={false} currentUid="player" onNextTurn={async () => { setScoreboardOpen(false); }} />
+      : <TurnPlayback code="TEST12"
       round={currentRound} currentUid={isJudge ? 'judge' : 'player'} currentUserName="Ana"
-      isJudge={isJudge} judgeName="Presentador" players={[{ uid: 'player', displayName: 'Ana' }, { uid: 'judge', displayName: 'Presentador' }] as any} />
+      isJudge={isJudge} judgeName="Presentador" players={players} />}
     </div></IonContent>
   </IonPage>}
     <TurnSetupModal isOpen={previewOpen} judgeUid="judge" currentUserUid={isJudge ? 'judge' : 'player'} ownerUid="judge" selectionLocked={selectionLocked}

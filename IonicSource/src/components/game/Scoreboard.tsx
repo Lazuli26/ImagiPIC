@@ -4,6 +4,7 @@ import type { GuessDoc, RoomPlayer, RoundDoc, RoomDoc } from '../../types/databa
 import { decodeAllToSvgRows, unflattenShapes } from '../../utils/compactShapeCodec';
 import { isLastTurn, matchTurnCount, matchTurnNumber } from '../../game/match';
 import Standings from './Standings';
+import ScoringRules from './ScoringRules';
 import { imageModifierFilter } from '../../game/imageModifiers';
 
 interface ScoreboardProps {
@@ -23,6 +24,7 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ room, round, guesses, players, 
   const [countdown, setCountdown] = useState(duration);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [imageOpen, setImageOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth > 760);
   const attempted = useRef(false);
   const fallbackStartedAt = useRef(Date.now());
   const lastTurn = isLastTurn(room);
@@ -30,6 +32,8 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ room, round, guesses, players, 
   const rows = useMemo(() => decodeAllToSvgRows(unflattenShapes(round.shapesCompactCopy || []), round.width || 512, round.height || 512), [round.shapesCompactCopy, round.width, round.height]);
   const correctUids = rankOrder.filter(uid => uid !== round.judgeUid && perPlayerScores[uid] > 0);
   const correctCount = correctUids.length;
+  const guesserCount = round.results?.guesserCount ?? (round.participantUids || players.map(player => player.uid)).filter(uid => uid !== round.judgeUid).length;
+  const ownPoints = currentUid ? round.results?.breakdown?.[currentUid] : undefined;
   const firstUid = guesses.filter(guess => guess.verdict === 'CORRECT' && correctUids.includes(guess.uid))
     .sort((a, b) => (a.submittedAt?.toMillis?.() ?? Infinity) - (b.submittedAt?.toMillis?.() ?? Infinity))[0]?.uid;
 
@@ -58,15 +62,17 @@ const Scoreboard: React.FC<ScoreboardProps> = ({ room, round, guesses, players, 
   }, [duration, round.scoredAt, isHost, onNextTurn]);
 
   return <div className="game-shell round-results">
-    <div className="results-heading"><span className="game-eyebrow">TURNO {matchTurnNumber(room)} DE {matchTurnCount(room)} COMPLETADO</span><h1>{correctCount ? '¡Bien visto!' : 'Esta imagen se resistió'}</h1><p>{correctCount} de {players.filter(p => p.uid !== round.judgeUid).length} jugadores acertaron.{lastTurn ? ' La partida ha terminado.' : ' La próxima imagen ya te espera.'}</p></div>
+    <div className="results-heading"><span className="game-eyebrow">TURNO {matchTurnNumber(room)} DE {matchTurnCount(room)} COMPLETADO</span><h1>{correctCount ? '¡Bien visto!' : 'Esta imagen se resistió'}</h1><p>{correctCount} de {guesserCount} jugadores acertaron.{lastTurn ? ' La partida ha terminado.' : ' La próxima imagen ya te espera.'}</p></div>
     <div className="results-grid">
-      <section className="game-card reveal-card"><h2>La imagen completa</h2><div className="result-image">{rows.length > 0 ? <svg className="geometric-image" viewBox={`0 0 ${round.width || 512} ${round.height || 512}`} preserveAspectRatio="xMidYMid meet" style={{ filter: imageModifierFilter(round.imageModifier) }} role="img" aria-label="Imagen completa del turno" dangerouslySetInnerHTML={{ __html: rows.join('\n') }} /> : <p>La imagen no está disponible.</p>}</div><p>Presentó: <strong>{players.find(p => p.uid === round.judgeUid)?.displayName || 'Jugador'}</strong></p>{firstUid && <p className="game-notice">⚡ Primer acierto: <strong>{players.find(p => p.uid === firstUid)?.displayName || 'Jugador'}</strong> · +{perPlayerScores[firstUid] || 0} pts</p>}<p className="game-notice">Imagen del juez: <strong>+{perPlayerScores[round.judgeUid] || 0} pts</strong></p><p className="game-hint">El juez recibe hasta 100 puntos según la proporción de jugadores que aciertan y sus estrellas. Adivinar suma 30, 60 o 90 puntos, más hasta 10 por rapidez.</p></section>
-      <section className="game-card"><div className="game-card-heading"><h2>Así va la partida</h2><span className="game-pill">Puntos totales</span></div><Standings players={players} scores={room.cumulativeScores || {}} roundScores={perPlayerScores} judgeUid={round.judgeUid} currentUid={currentUid} />
+      <section className="game-card scores-card" aria-label="Clasificación de la partida"><div className="game-card-heading"><h2>Así va la partida</h2><span className="game-pill">Puntos totales</span></div><Standings players={players} scores={room.cumulativeScores || {}} roundScores={perPlayerScores} judgeUid={round.judgeUid} currentUid={currentUid} />
+        {ownPoints && <p className="score-breakdown">{currentUid === round.judgeUid ? `Tu imagen: ${ownPoints.base} puntos por los aciertos del grupo.` : `Tu acierto: ${ownPoints.base} puntos base + ${ownPoints.speed} por rapidez.`}</p>}
+        <ScoringRules />
         <div className="results-next" aria-live="polite">{error ? <p className="game-error" role="alert">{error}</p> : duration > 0 ? <><p>{lastTurn ? 'Resultados finales' : 'Siguiente turno'} en <strong>{countdown}s</strong></p><IonProgressBar value={countdown / duration} /></> : <p>El anfitrión decide cuándo continuar.</p>}
           {isHost && <IonButton expand="block" size="large" disabled={busy} onClick={() => { attempted.current = false; advance(); }}>{busy ? 'Continuando…' : nextLabel}</IonButton>}
           {!isHost && countdown === 0 && duration > 0 && <p className="game-hint">Esperando al anfitrión…</p>}
         </div>
       </section>
+      <section className="game-card reveal-card"><button type="button" className="reveal-toggle" aria-expanded={imageOpen} aria-controls="round-image-reveal" onClick={() => setImageOpen(open => !open)}>{imageOpen ? 'Ocultar imagen del turno' : 'Ver imagen del turno'}<span aria-hidden="true">{imageOpen ? '−' : '+'}</span></button>{imageOpen && <div id="round-image-reveal"><div className="result-image">{rows.length > 0 ? <svg className="geometric-image" viewBox={`0 0 ${round.width || 512} ${round.height || 512}`} preserveAspectRatio="xMidYMid meet" style={{ filter: imageModifierFilter(round.imageModifier) }} role="img" aria-label="Imagen completa del turno" dangerouslySetInnerHTML={{ __html: rows.join('\n') }} /> : <p>La imagen no está disponible.</p>}</div><p>Presentó: <strong>{players.find(p => p.uid === round.judgeUid)?.displayName || 'Jugador'}</strong></p>{firstUid && <p className="game-notice">⚡ Primer acierto: <strong>{players.find(p => p.uid === firstUid)?.displayName || 'Jugador'}</strong> · +{perPlayerScores[firstUid] || 0} pts</p>}<p className="game-notice">Imagen del juez: <strong>+{perPlayerScores[round.judgeUid] || 0} pts</strong></p></div>}</section>
     </div>
   </div>;
 };

@@ -6,6 +6,7 @@ import { normalizeUploadedImage } from '../utils/imageUploadUtils';
 import { searchCommonsImages, downloadCommonsImage } from '../utils/commonsImages';
 
 jest.mock('./GeometrizePlayer.tsx/GeoPlayer', () => ({ GeoPlayer: ({ playerUiRef }: any) => { playerUiRef.current = mockPlayer; return null; } }));
+jest.mock('./ShapeStylePreview', () => () => <div>Vista previa de la mezcla</div>);
 jest.mock('../assets/libraries/Geometrize/GeometrizeController', () => ({ GeometrizeController: class { async initialize() { return { width: 100, height: 100 }; } async step() { return []; } dispose() {} } }));
 jest.mock('../game/deckOperations', () => ({ saveDeckImage: jest.fn() }));
 jest.mock('../firebase/firestore', () => ({ typedDoc: () => ({}), getDocSnap: async () => ({ exists: () => false }) }));

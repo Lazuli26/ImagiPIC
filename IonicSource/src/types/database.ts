@@ -106,12 +106,17 @@ export interface RoundDoc {
   graceTimerSecs: number;
   state: RoundState;
   adjudicationStartedAt?: Timestamp;
+  // Frozen when the guessing clock starts; leaving later cannot change awards.
+  participantUids?: string[];
   scoredAt?: Timestamp;
   guessesCount?: number;
   unjudgedCount?: number;
   results?: {
     perPlayerScores: Record<string, number>;
     rankOrder: string[];
+    scoringVersion?: number;
+    breakdown?: Record<string, { base: number; speed: number }>;
+    guesserCount?: number;
   };
 }
 

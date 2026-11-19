@@ -87,11 +87,13 @@ async function main() {
     // The confirmed effect is already present on the first shared snapshot.
     await assert.rejects(() => updateDoc(judgeRoundRef, { imageModifier: { type: 'none' } }));
     await updateDoc(judgeRoundRef, { state: 'IN_PROGRESS', startedAt: serverTimestamp(),
+      participantUids: (await read(roomRef)).players.map(player => player.uid),
       playback: { ...processing.playback, playing: true, anchorAt: serverTimestamp() },
     });
     const started = await read(roundRef);
     assert(started.playback.anchorAt.isEqual(started.startedAt));
     assert.deepEqual(started.imageModifier, imageModifier);
+    assert.deepEqual(started.participantUids, (await read(roomRef)).players.map(player => player.uid));
     await assert.rejects(() => updateDoc(judgeRoundRef, { imageModifier: { type: 'none' } }));
     await assert.rejects(() => updateDoc(guesserRoundRef, { imageModifier: { type: 'none' } }));
     const guessPath = ['rooms', code, 'rounds', `round-${index}`, 'guesses', 'answer'];
@@ -128,10 +130,15 @@ async function main() {
     await assert.rejects(() => rateAnswer('CORRECT', 1));
     await Promise.all([scoreRound(code, index, 'host'), scoreRound(code, index, 'host')]);
     const awarded = (await read(roundRef)).results.perPlayerScores;
-    assert(awarded.guesser >= 90 && awarded.guesser <= 100);
+    const savedResults = (await read(roundRef)).results;
+    assert.equal(savedResults.scoringVersion, 2);
+    assert.equal(savedResults.guesserCount, 2);
+    assert.equal(savedResults.breakdown.guesser.base, 80);
+    assert.equal(savedResults.breakdown.guesser.base + savedResults.breakdown.guesser.speed, awarded.guesser);
+    assert(awarded.guesser >= 80 && awarded.guesser <= 100);
     completedScores.push(awarded.guesser);
     guesserTotal += awarded.guesser;
-    assert.equal(awarded[round.judgeUid], 50);
+    assert.equal(awarded[round.judgeUid], 40);
     assert.equal((await read(roomRef)).cumulativeScores.guesser, guesserTotal);
     // Duplicate requests must not create two rounds or end the next round early.
     await Promise.all([advanceRound(code, index + 1, 'guesser'), advanceRound(code, index + 1, 'guesser')]);

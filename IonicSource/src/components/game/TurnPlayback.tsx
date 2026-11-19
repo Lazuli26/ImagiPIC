@@ -4,7 +4,7 @@ import {
   IonProgressBar,
   IonText,
 } from '@ionic/react';
-import { checkmarkCircleOutline, playSkipForward, stopCircle } from 'ionicons/icons';
+import { checkmarkCircleOutline, eyeOffOutline, eyeOutline, playSkipForward, stopCircle } from 'ionicons/icons';
 import { arrayUnion, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { db } from '../../firebase/firebaseApp';
@@ -77,6 +77,7 @@ const TurnPlayback: React.FC<TurnPlaybackProps> = ({
   const [controlBusy, setControlBusy] = useState(false);
   const controlPending = useRef(false);
   const [controlError, setControlError] = useState('');
+  const [controlsVisible, setControlsVisible] = useState(true);
 
   const [writing, setWriting] = useState(false);
   const [allGuessed, setAllGuessed] = useState(false);
@@ -271,6 +272,7 @@ const TurnPlayback: React.FC<TurnPlaybackProps> = ({
     if (round.state === 'PROCESSING') {
       patch.state = 'IN_PROGRESS';
       patch.startedAt = serverTimestamp();
+      patch.participantUids = players.map(player => player.uid);
     }
     updateControl(patch);
   };
@@ -300,6 +302,7 @@ const TurnPlayback: React.FC<TurnPlaybackProps> = ({
   const canvasWrap = (
     <div
       ref={svgWrapRef}
+      className="turn-canvas-wrap"
       style={{
         flex: '0 0 auto',
         width: '100%',
@@ -310,6 +313,7 @@ const TurnPlayback: React.FC<TurnPlaybackProps> = ({
       }}
     >
       <div
+        className="turn-canvas-surface"
         style={{
           width: '100%',
           maxWidth: landscape
@@ -464,7 +468,7 @@ const TurnPlayback: React.FC<TurnPlaybackProps> = ({
       {round.state === 'ADJUDICATION' && !allGuessed && <><p className="game-hint">Valida los aciertos antes de continuar.</p><IonButton size="small" disabled={controlBusy} onClick={handleEndGrace}><IonIcon slot="start" icon={stopCircle} />Confirmar y ver puntos</IonButton></>}
     </div>
   );
-  const judgeActionBar = isJudge && <div className="judge-action-bar">
+  const judgeActionBar = isJudge && <div className="judge-action-bar" id="judge-floating-controls">
     {allGuessed && ['IN_PROGRESS', 'ADJUDICATION'].includes(round.state) && <div className="judge-complete-notice">
       <div role="status" aria-live="polite"><IonIcon icon={checkmarkCircleOutline} aria-hidden="true" /><div><strong>¡Todos acertaron!</strong><p>Puedes saltar a los puntos o dejar que termine el tiempo.</p></div></div>
       <IonButton color="success" disabled={controlBusy} onClick={handleSkipToScores}><IonIcon slot="start" icon={playSkipForward} />Saltar a los puntos</IonButton>
@@ -579,8 +583,17 @@ const TurnPlayback: React.FC<TurnPlaybackProps> = ({
         overflow: 'auto',
       }}
     >
-      {judgeActionBar}
-      {canvasWrap}
+      {isJudge ? <div className="judge-art-stage">
+        {canvasWrap}
+        <button type="button" className="judge-controls-toggle" aria-label={controlsVisible ? 'Ocultar controles del juez' : 'Mostrar controles del juez'}
+          aria-expanded={controlsVisible} aria-controls="judge-floating-controls" onClick={() => setControlsVisible(visible => !visible)}>
+          <IonIcon aria-hidden="true" icon={controlsVisible ? eyeOffOutline : eyeOutline} /><span>{controlsVisible ? 'Ocultar controles' : 'Mostrar controles'}</span>
+        </button>
+        {controlsVisible ? judgeActionBar : <>
+          {allGuessed && ['IN_PROGRESS', 'ADJUDICATION'].includes(round.state) && <p className="judge-controls-summary" role="status">✓ Todos acertaron · Abre los controles para saltar a los puntos</p>}
+          {controlError && <p role="alert" className="game-error judge-controls-summary">{controlError}</p>}
+        </>}
+      </div> : canvasWrap}
       {fullPreview && <p className="game-hint">Vista previa completa · Solo tú puedes verla</p>}
       {progressBar}
     </div>
@@ -588,7 +601,7 @@ const TurnPlayback: React.FC<TurnPlaybackProps> = ({
 
   return (
     <div
-      className="turn-playback"
+      className={`turn-playback${isJudge ? ' is-judge' : ''}${landscape ? ' is-landscape' : ''}`}
       style={{
         display: 'flex',
         flexDirection: landscape ? 'row' : 'column',

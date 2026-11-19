@@ -14,7 +14,7 @@ const props = { room, round, players, guesses: [], perPlayerScores: { a: 100 }, 
 let now = 0;
 beforeEach(() => { now = Date.now(); jest.spyOn(Date, 'now').mockImplementation(() => now); jest.useFakeTimers(); props.onNextTurn.mockClear(); });
 const advanceTime = (ms: number) => { now += ms; jest.advanceTimersByTime(ms); };
-afterEach(() => { cleanup(); jest.clearAllTimers(); jest.useRealTimers(); jest.restoreAllMocks(); });
+afterEach(async () => { await act(async () => { cleanup(); }); jest.clearAllTimers(); jest.useRealTimers(); jest.restoreAllMocks(); });
 
 test('the last turn offers final results and lists everyone', () => {
   const view = render(<Scoreboard {...props} />);
@@ -61,4 +61,19 @@ test('judge points do not inflate the correct count or replace the earliest actu
   expect(view.container.querySelector('.game-notice')!.textContent).toContain('Primer acierto: Ana');
   expect(view.getByText(/Imagen del juez:/).textContent).toContain('+100 pts');
   expect(view.container.querySelector('.turn-points small')!.textContent).toContain('Presentó');
+});
+
+
+test('on a phone the standings come first and the completed image opens only on request', () => {
+  const width = window.innerWidth;
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+  try {
+    const view = render(<Scoreboard {...props} round={{ ...round, shapesCompactCopy: [6, 255, 4, 0, 0, 10, 10] }} />);
+    const scores = view.container.querySelector('.scores-card')!;
+    const reveal = view.container.querySelector('.reveal-card')!;
+    expect(scores.compareDocumentPosition(reveal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(view.queryByRole('img', { name: 'Imagen completa del turno' })).toBeNull();
+    fireEvent.click(view.getByRole('button', { name: /Ver imagen del turno/ }));
+    expect(view.getByRole('img', { name: 'Imagen completa del turno' })).toBeTruthy();
+  } finally { Object.defineProperty(window, 'innerWidth', { configurable: true, value: width }); }
 });

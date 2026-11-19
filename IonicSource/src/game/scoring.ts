@@ -1,39 +1,47 @@
 import type { RoundDoc, GuessDoc, CorrectStars } from '../types/database';
 
-export const STAR_BASE_POINTS: Record<CorrectStars, number> = { 1: 30, 2: 60, 3: 90 };
-export const MAX_SPEED_BONUS = 10;
+export const STAR_BASE_POINTS: Record<CorrectStars, number> = { 1: 40, 2: 60, 3: 80 };
+export const MAX_SPEED_BONUS = 20;
+export const STAR_DESCRIPTIONS: Record<CorrectStars, string> = { 1: 'Idea general', 2: 'Reconocible, con detalles pendientes', 3: 'Respuesta precisa o sinónimo equivalente' };
 
 export function correctStars(guess: Pick<GuessDoc, 'verdict' | 'stars'>): CorrectStars | null {
   if (guess.verdict !== 'CORRECT') return null;
-  return guess.stars === 1 || guess.stars === 2 ? guess.stars : 3;
+  if (guess.stars == null) return 3; // Legacy answers without a star grade.
+  return guess.stars === 1 || guess.stars === 2 || guess.stars === 3 ? guess.stars : null;
 }
 
 export interface ScoreResult {
   perPlayerScores: Record<string, number>;
   rankOrder: string[];
+  breakdown: Record<string, { base: number; speed: number }>;
   meta: {
     tFirstSub: number | null;
     roundEndsAtMs: number;
+    guessesCloseAtMs: number;
+    guesserCount: number;
     bestByUid: Record<string, GuessDoc>;
   };
 }
 
-// Each star level has its own points band. Speed adds at most ten points,
-// measured against the whole turn, so a late first answer is never worth 100.
+// Accuracy: 40/60/80; speed: up to 20 against the original turn duration.
+// A weaker grade can tie, but never exceed, the next grade through speed alone.
 export function computeScores(round: RoundDoc, guesses: GuessDoc[], playerUids?: string[]): ScoreResult {
   const startedMs = round.startedAt?.toMillis?.() ?? NaN;
   const durationMs = Math.max(0, round.roundTimerSecs * 1000);
   const roundEndsAtMs = startedMs + durationMs;
-  const guessers = new Set((playerUids || guesses.map(guess => guess.uid)).filter(uid => uid !== round.judgeUid));
+  const reviewStartedMs = round.adjudicationStartedAt?.toMillis?.();
+  const guessesCloseAtMs = Number.isFinite(reviewStartedMs) ? Math.min(roundEndsAtMs, reviewStartedMs!) : roundEndsAtMs;
+  const guessers = new Set((round.participantUids || playerUids || guesses.map(guess => guess.uid)).filter(uid => uid !== round.judgeUid));
   const bestByUid: Record<string, GuessDoc> = {};
   const perPlayerScores: Record<string, number> = {};
+  const breakdown: ScoreResult['breakdown'] = {};
   let tFirstSub: number | null = null;
 
   for (const guess of guesses) {
     const stars = correctStars(guess);
     const submittedMs = guess.submittedAt?.toMillis?.() ?? NaN;
     if (!stars || !guessers.has(guess.uid) || !Number.isFinite(startedMs) || !Number.isFinite(submittedMs)
-      || durationMs <= 0 || submittedMs < startedMs || submittedMs > roundEndsAtMs) continue;
+      || !Number.isFinite(durationMs) || durationMs <= 0 || submittedMs < startedMs || submittedMs > guessesCloseAtMs) continue;
     tFirstSub = Math.min(tFirstSub ?? submittedMs, submittedMs);
     const speedBonus = Math.round(MAX_SPEED_BONUS * (roundEndsAtMs - submittedMs) / durationMs);
     const points = STAR_BASE_POINTS[stars] + speedBonus;
@@ -42,13 +50,15 @@ export function computeScores(round: RoundDoc, guesses: GuessDoc[], playerUids?:
       || (points === perPlayerScores[guess.uid] && submittedMs < previous.submittedAt.toMillis())) {
       bestByUid[guess.uid] = guess;
       perPlayerScores[guess.uid] = points;
+      breakdown[guess.uid] = { base: STAR_BASE_POINTS[stars], speed: speedBonus };
     }
   }
 
-  // A readable image earns its presenter up to 100, independently of group
-  // size. Unsolved players contribute zero; stars contribute 1/3, 2/3 or 1.
-  const quality = Object.values(bestByUid).reduce((sum, guess) => sum + correctStars(guess)!, 0);
-  perPlayerScores[round.judgeUid] = guessers.size ? Math.round(100 * quality / (3 * guessers.size)) : 0;
+  // Share the group's accuracy, including zero for each unsolved participant.
+  // Only guessers earn speed: the judge controls when/how fast shapes appear.
+  const quality = Object.values(breakdown).reduce((sum, points) => sum + points.base, 0);
+  perPlayerScores[round.judgeUid] = guessers.size ? Math.round(quality / guessers.size) : 0;
+  breakdown[round.judgeUid] = { base: perPlayerScores[round.judgeUid], speed: 0 };
   const rankOrder = Object.keys(perPlayerScores).sort((a, b) => {
     const scoreDiff = perPlayerScores[b] - perPlayerScores[a];
     if (scoreDiff) return scoreDiff;
@@ -56,5 +66,5 @@ export function computeScores(round: RoundDoc, guesses: GuessDoc[], playerUids?:
     const bMs = bestByUid[b]?.submittedAt.toMillis() ?? Infinity;
     return (aMs === bMs ? 0 : aMs - bMs) || a.localeCompare(b);
   });
-  return { perPlayerScores, rankOrder, meta: { tFirstSub, roundEndsAtMs, bestByUid } };
+  return { perPlayerScores, rankOrder, breakdown, meta: { tFirstSub, roundEndsAtMs, guessesCloseAtMs, guesserCount: guessers.size, bestByUid } };
 }

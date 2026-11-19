@@ -221,10 +221,11 @@ export async function scoreRound(code: string, roundIndex: number, hostUid: stri
       const room = roomSnapshot.data()!;
       if (room.hostUid !== hostUid || !['PLAYING', 'SCOREBOARD'].includes(room.state) || room.roundIndex !== roundIndex) return;
       if (round.state !== 'ADJUDICATION_CLOSED' || round.results != null) return;
-      const scores = computeScores(round, answers, (room.matchPlayers || room.players).map(player => player.uid));
+      const scores = computeScores(round, answers, room.players.map(player => player.uid));
       const cumulativeScores = { ...(room.cumulativeScores || {}) };
       Object.entries(scores.perPlayerScores).forEach(([uid, points]) => { cumulativeScores[uid] = (cumulativeScores[uid] || 0) + points; });
-      transaction.update(roundRef, { results: { perPlayerScores: scores.perPlayerScores, rankOrder: scores.rankOrder }, state: 'SCORED', scoredAt: serverTimestamp() });
+      transaction.update(roundRef, { results: { perPlayerScores: scores.perPlayerScores, rankOrder: scores.rankOrder,
+        scoringVersion: 2, breakdown: scores.breakdown, guesserCount: scores.meta.guesserCount }, state: 'SCORED', scoredAt: serverTimestamp() });
       transaction.update(roomRef, { cumulativeScores });
     });
   } catch (error) {

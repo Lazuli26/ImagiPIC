@@ -1,5 +1,6 @@
 import { IonButton, IonIcon, IonToggle } from '@ionic/react';
 import { copyOutline, personRemoveOutline, play, checkmarkCircleOutline } from 'ionicons/icons';
+import ScoringRules from '../../components/game/ScoringRules';
 import React, { useContext, useEffect, useState } from 'react';
 import { UserAuthContext } from '../../App';
 import type { RoomDoc } from '../../types/database';
@@ -78,7 +79,7 @@ const Lobby: React.FC<LobbyProps> = ({ code, room }) => {
 
   return <div className="game-shell lobby-shell">
     <section className="lobby-intro">
-      <div><span className="game-eyebrow">QUE EMPIECE EL JUEGO</span><h1>Una imagen. Muchas ideas.</h1><p>Invita a tu grupo y prepara la próxima partida.</p></div>
+      <div><span className="game-eyebrow">QUE EMPIECE EL JUEGO</span><h1>Una imagen. Muchas ideas.</h1><p>Invita a tu grupo y prepara la próxima partida.</p><ScoringRules /></div>
       <div className="invite-card"><span>Código de sala</span><strong>{code}</strong>
         <IonButton fill="clear" onClick={async () => { try { await navigator.clipboard.writeText(code); setCopied(true); } catch (e) { setError('No se pudo copiar. Comparte el código que aparece arriba.'); } }}>
           <IonIcon slot="start" icon={copied ? checkmarkCircleOutline : copyOutline} />{copied ? '¡Copiado!' : 'Copiar código'}
@@ -94,7 +95,7 @@ const Lobby: React.FC<LobbyProps> = ({ code, room }) => {
         </div>)}</div>
         <label className="role-setting"><span><strong>Solo quiero adivinar</strong><small>No presentarás imágenes de tu mazo.</small></span><IonToggle aria-label="Solo quiero adivinar" checked={!!self?.skipJudge} disabled={roleBusy || busy} onIonChange={e => changeRole(e.detail.checked)} /></label>
         {meta?.count === 0 && !self?.skipJudge && <p className="game-notice">Tu mazo está vacío. Añade imágenes en «Deck» antes de presentar o elige solo adivinar.</p>}
-        <div className="how-to-play"><h3>Así se juega</h3><ol><li>El presentador elige una imagen de su mazo.</li><li>La imagen aparece poco a poco. Los demás adivinan.</li><li>El presentador valida las respuestas. ¡Acertar antes da más puntos!</li></ol><p>Cada ronda da un turno a cada presentador. El primer acierto vale 100 puntos; los siguientes dependen del tiempo restante.</p></div>
+        <div className="how-to-play"><h3>Así se juega</h3><ol><li>El presentador elige una imagen de su mazo.</li><li>La imagen aparece poco a poco. Los demás adivinan.</li><li>El presentador valida las respuestas. ¡Acertar antes da más puntos!</li></ol><p>Cada ronda da un turno a cada presentador. Las estrellas valoran qué tan precisa es la respuesta; acertar antes añade puntos por rapidez.</p><ScoringRules /></div>
       </section>
       <section className="game-card"><div className="game-card-heading"><h2>Tu partida, tus reglas</h2><span className="game-pill">{isHost ? 'Configura' : 'Anfitrión configura'}</span></div>
         {setting('roundsPerGame', 'Rondas', 'Cada presentador participa una vez por ronda.', [1, 2, 3, 4, 5].map(value => ({ value, label: `${value} ${value === 1 ? 'ronda' : 'rondas'}` })))}

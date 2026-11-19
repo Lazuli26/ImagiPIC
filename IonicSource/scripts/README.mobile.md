@@ -32,6 +32,10 @@ Comprueba los motores disponibles con anchos de 320, 390, 430 y 1280 px:
   cuando el juez lo pulsa.
 - Editor con búsqueda enfocada al abrir, importación de un resultado, creación y
   guardado; controles iniciales y resultado final sin scroll en los tamaños probados.
+- Controles del juez superpuestos al lienzo y botón de ojo que conserva la imagen
+  y el panel de respuestas al ocultarlos.
+- Nombre de carta destacado y comparación de la mezcla de figuras con la imagen
+  original. Clasificación antes de la imagen, plegada inicialmente en móvil.
 
 El editor usa su normalización de imágenes real. El buscador externo y el motor
 de formas se sustituyen por datos deterministas en `editor-fixture-*`, además
@@ -47,3 +51,11 @@ El ajuste sigue `visualViewport` para Safari y usa además
 `interactive-widget=resizes-content` para navegadores compatibles:
 [WebKit: Visual Viewport](https://webkit.org/blog/9674/new-webkit-features-in-safari-13/),
 [Ionic: cambios del teclado en Chrome Android](https://ionic.io/blog/preparing-your-ionic-app-for-changes-coming-to-chrome-for-android).
+
+Para comprobar también el worker real de la vista previa mezclada, sin simular
+su cálculo, usar `REAL_STYLE_PREVIEW=1`. `TEST_WIDTHS=390` limita esa prueba a un
+ancho de pantalla. La generación completa de cartas y Firestore siguen aislados.
+
+Las reglas, los ejemplos y la comparación con otros juegos están en
+[`docs/SCORING.md`](../../docs/SCORING.md). El puntaje también se comprueba con
+`npm run test:gameplay` desde la raíz contra el emulador local de Firestore.

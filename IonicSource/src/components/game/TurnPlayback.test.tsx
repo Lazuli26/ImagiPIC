@@ -41,7 +41,7 @@ beforeEach(() => {
   jest.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => { frames.push(callback); return frames.length; });
   jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
 });
-afterEach(() => { cleanup(); jest.clearAllTimers(); jest.useRealTimers(); jest.restoreAllMocks(); jest.clearAllMocks(); });
+afterEach(async () => { await act(async () => { cleanup(); }); jest.clearAllTimers(); jest.useRealTimers(); jest.restoreAllMocks(); jest.clearAllMocks(); });
 
 test('crossing the layout breakpoint keeps the draft input and painted SVG mounted', () => {
   const originalWidth = window.innerWidth;
@@ -192,11 +192,27 @@ test('offers an optional skip after everyone solves it, without advancing automa
   const view = render(<TurnPlayback {...props} />);
   const controls = view.container.querySelector('.judge-action-bar')!;
   const image = view.container.querySelector('svg')!;
-  expect(controls.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(view.container.querySelector('.judge-art-stage')!.contains(controls)).toBe(true);
+  expect(view.container.querySelector('.judge-art-stage')!.contains(image)).toBe(true);
   view.rerender(<TurnPlayback {...props} round={{ ...round, state: 'IN_PROGRESS' }} />);
   act(() => mockChatProps.onAllGuessedChange(true));
   expect(view.getByRole('status').textContent).toContain('¡Todos acertaron!');
   expect(updateDoc).not.toHaveBeenCalledWith('rooms/TEST12/rounds/round-0', expect.anything());
   await act(async () => { fireEvent.click(view.getByText('Saltar a los puntos')); });
   expect(updateDoc).toHaveBeenCalledWith('rooms/TEST12/rounds/round-0', { state: 'ADJUDICATION_CLOSED' });
+});
+
+
+test('the eye hides only local controls and preserves the judge image and answer panel', () => {
+  const view = render(<TurnPlayback {...props} />);
+  const image = view.container.querySelector('svg');
+  const answers = view.getByTestId('chat-draft');
+  const start = view.getByText('Iniciar turno');
+  fireEvent.click(view.getByRole('button', { name: 'Ocultar controles del juez' }));
+  expect(view.queryByText('Iniciar turno')).toBeNull();
+  expect(view.container.querySelector('svg')).toBe(image);
+  expect(view.getByTestId('chat-draft')).toBe(answers);
+  expect(updateDoc).not.toHaveBeenCalledWith('rooms/TEST12/rounds/round-0', expect.anything());
+  fireEvent.click(view.getByRole('button', { name: 'Mostrar controles del juez' }));
+  expect(view.getByText('Iniciar turno').textContent).toBe(start.textContent);
 });

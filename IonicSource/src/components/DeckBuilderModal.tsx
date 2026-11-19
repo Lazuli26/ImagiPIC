@@ -17,6 +17,7 @@ import {
   unflattenShapes,
 } from "../utils/compactShapeCodec";
 import InlineSvgPreview from './game/InlineSvgPreview';
+import ShapeStylePreview from './ShapeStylePreview';
 import { getDocSnap, typedDoc } from "../firebase/firestore";
 import {
   normalizeUploadedImage,
@@ -867,10 +868,16 @@ const DeckBuilderModal: React.FC<DeckBuilderModalProps> = ({
               {clipboard.error && <p className="clipboard-error" role="status">{clipboard.error}</p>}
             </>}
             {step === 2 && <>
+              <label className={`builder-name${label.trim() ? '' : ' is-empty'}`} htmlFor="builder-card-name">
+                <span className="builder-name-heading">Ponle nombre a tu carta <small>Opcional</small></span>
+                <input id="builder-card-name" aria-label="Nombre de la carta" aria-describedby="builder-name-hint" placeholder="Ej.: Un gato astronauta" maxLength={80} value={label} disabled={saving} onChange={event => setLabel(event.target.value)} />
+                <small id="builder-name-hint">Así podrás reconocerla en tu mazo.</small>
+              </label>
               <div className="builder-canvas" aria-label="Vista previa de la carta">
                 {processingStarted && livePreviewDims.w > 0 && livePreviewRows.length > 0
                   ? <InlineSvgPreview shapes={livePreviewRows} step={previewStepCursor} width={livePreviewDims.w} height={livePreviewDims.h} />
-                  : <img src={previewDataUrl} alt="Imagen original" />}
+                  : !processingStarted && <ShapeStylePreview imageSrc={previewDataUrl} shapeTypes={selectedShapeTypes} alpha={alpha}
+                    candidateShapesPerStep={candidateShapesPerStep} shapeMutationsPerStep={shapeMutationsPerStep} maxPixels={maxPixels} />}
                 {processing && <span className="builder-progress-label" role="status">Creando formas · {Math.floor(progressPct)}%</span>}
               </div>
               {processingStarted && <div className="builder-playback-slider">
@@ -878,7 +885,6 @@ const DeckBuilderModal: React.FC<DeckBuilderModalProps> = ({
                 <input id="builder-preview-cursor" type="range" aria-label="Formas visibles" min={0} max={Math.max(shapeCount, loadedShapeCount)} value={previewStepCursor} onChange={event => setPreviewStepCursor(Number(event.target.value))} />
                 {processing && <IonProgressBar value={progressPct / 100} />}
               </div>}
-              <label className="builder-name">Nombre <span>(opcional)</span><input aria-label="Nombre de la carta" placeholder="Por ejemplo: Mi perro" maxLength={80} value={label} disabled={saving} onChange={event => setLabel(event.target.value)} /></label>
               <fieldset className="builder-shapes" disabled={busy}>
                 <legend>Formas de tu carta</legend>
                 <div>{geoShapeTypesEntries.map(([key, value]) => <button type="button" key={key} aria-pressed={selectedShapeTypes.includes(Number(value))}
