@@ -1,6 +1,6 @@
 {
   "appId": "io.ionic.starter",
-  "appName": "IonicSource",
+  "appName": "ImagiPIC",
   "bundledWebRuntime": false,
   "npmClient": "npm",
   "webDir": "build",

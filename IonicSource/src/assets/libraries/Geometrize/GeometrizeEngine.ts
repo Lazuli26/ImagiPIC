@@ -1,14 +1,14 @@
-import { Bitmap, ImageRunner, ShapeResult, SvgExporter } from "geometrizejs";
-import { ShapeJsonExporter } from "geometrizejs/dist/src/shapeJsonExporter";
+import { Bitmap, ImageRunner, ShapeResult, SvgExporter, ShapeJsonExporter } from "geometrizejs";
 import Jimp from "jimp";
 import { defaultOptions } from "./defaults";
 import { GeometrizeInstance, GeometrizeOptions } from "./Types";
+import { CompactShapeRow, encodeFromShapeJson } from "../../../utils/compactShapeCodec";
 
 export class GeometrizeEngine implements GeometrizeInstance {
     runner?: ImageRunner;
     bitMap?: Bitmap;
     options?: GeometrizeOptions;
-    shapes?: ShapeResult[];
+    shapes?: ShapeResult[] = [];
     initialize = async (imageURL: string, options: GeometrizeOptions = defaultOptions): Promise<Bitmap> => {
         return new Promise((resolve, reject) => {
             this.options = options
@@ -51,11 +51,23 @@ export class GeometrizeEngine implements GeometrizeInstance {
             for (let step = 0; step < steps; step++) {
                 result.push(this.runner!.step(this.options)[0])
             }
+            this.shapes = [...this.shapes ?? [], ...result]
 
             return result.map(s => SvgExporter.exportShape(s))
         }
         else throw new Error("'step' was called before initializing!");
     }
     getShapesJSON = async () => this.shapes?.map(ShapeJsonExporter.exportShape) ?? []
+    getShapesCompact = async (): Promise<CompactShapeRow[]> => {
+        const out: CompactShapeRow[] = [];
+        for (const s of this.shapes ?? []) {
+            const jsonStr = ShapeJsonExporter.exportShape(s);
+            let parsed: unknown;
+            try { parsed = JSON.parse(jsonStr); } catch (_e) { continue; }
+            const row = encodeFromShapeJson(parsed);
+            if (row !== null) out.push(row);
+        }
+        return out;
+    }
 
 }

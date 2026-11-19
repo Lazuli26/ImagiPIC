@@ -1,9 +1,467 @@
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if
-          request.time < timestamp.date(2020, 11, 13);
+  match /databases/{db}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function currentUid() { return request.auth.uid; }
+    function roomDoc(code) { return get(/databases/$(db)/documents/rooms/$(code)).data; }
+
+    // True if the UID equals the uid field of the players map at the given index.
+    function uidAt(players, i) { return players[i].uid; }
+
+    // True if uid exists in players[].uid (scans by index, no list lambdas needed).
+    function uidInPlayers(uid, players) {
+      return players.size() > 0 && (
+        uid == uidAt(players, 0)
+        || players.size() > 1 && uid == uidAt(players, 1)
+        || players.size() > 2 && uid == uidAt(players, 2)
+        || players.size() > 3 && uid == uidAt(players, 3)
+        || players.size() > 4 && uid == uidAt(players, 4)
+        || players.size() > 5 && uid == uidAt(players, 5)
+        || players.size() > 6 && uid == uidAt(players, 6)
+        || players.size() > 7 && uid == uidAt(players, 7)
+        || players.size() > 8 && uid == uidAt(players, 8)
+        || players.size() > 9 && uid == uidAt(players, 9)
+        || players.size() > 10 && uid == uidAt(players, 10)
+        || players.size() > 11 && uid == uidAt(players, 11)
+      );
     }
+
+    function isPlayerInRoom(code) {
+      return isSignedIn() && roomDoc(code) != null
+        && uidInPlayers(currentUid(), roomDoc(code).players);
+    }
+    function isHost(code) {
+      return isSignedIn() && roomDoc(code) != null
+        && roomDoc(code).hostUid == currentUid();
+    }
+    function roundDoc(code, rid) { return get(/databases/$(db)/documents/rooms/$(code)/rounds/$(rid)).data; }
+    function isJudgeOfRound(code, rid) {
+      return isSignedIn() && roundDoc(code, rid) != null
+        && roundDoc(code, rid).judgeUid == currentUid();
+    }
+    function roundCounter(code, rid) { return get(/databases/$(db)/documents/rooms/$(code)/rounds/$(rid)/_counter/meta).data; }
+
+    // True if uid appears in a string list (turnOrder is a simple string[]).
+    function uidInStringList(uid, list) {
+      return list.size() > 0 && (
+        uid == list[0]
+        || list.size() > 1 && uid == list[1]
+        || list.size() > 2 && uid == list[2]
+        || list.size() > 3 && uid == list[3]
+        || list.size() > 4 && uid == list[4]
+        || list.size() > 5 && uid == list[5]
+        || list.size() > 6 && uid == list[6]
+        || list.size() > 7 && uid == list[7]
+        || list.size() > 8 && uid == list[8]
+        || list.size() > 9 && uid == list[9]
+        || list.size() > 10 && uid == list[10]
+        || list.size() > 11 && uid == list[11]
+      );
+    }
+
+    // True if cumulativeScores maps have the same entries for all existing keys,
+    // and the new map is exactly one key larger (only the new join uid).
+    function scoresJoinValid(oldMap, newMap, joiningUid) {
+      // New key is the joining uid, set to 0.
+      return (joiningUid in newMap.keys()) && newMap[joiningUid] == 0
+        && newMap.keys().size() == oldMap.keys().size() + 1
+        // All old keys are still in new with the same value.
+        && (oldMap.keys().size() == 0
+          || (oldMap.keys().size() >= 1
+            && (oldMap.keys()[0] in newMap.keys())
+            && oldMap[oldMap.keys()[0]] == newMap[oldMap.keys()[0]])
+          && (oldMap.keys().size() < 2
+            || ((oldMap.keys()[1] in newMap.keys())
+               && oldMap[oldMap.keys()[1]] == newMap[oldMap.keys()[1]]))
+          && (oldMap.keys().size() < 3
+            || ((oldMap.keys()[2] in newMap.keys())
+               && oldMap[oldMap.keys()[2]] == newMap[oldMap.keys()[2]]))
+          && (oldMap.keys().size() < 4
+            || ((oldMap.keys()[3] in newMap.keys())
+               && oldMap[oldMap.keys()[3]] == newMap[oldMap.keys()[3]]))
+          && (oldMap.keys().size() < 5
+            || ((oldMap.keys()[4] in newMap.keys())
+               && oldMap[oldMap.keys()[4]] == newMap[oldMap.keys()[4]]))
+          && (oldMap.keys().size() < 6
+            || ((oldMap.keys()[5] in newMap.keys())
+               && oldMap[oldMap.keys()[5]] == newMap[oldMap.keys()[5]]))
+          && (oldMap.keys().size() < 7
+            || ((oldMap.keys()[6] in newMap.keys())
+               && oldMap[oldMap.keys()[6]] == newMap[oldMap.keys()[6]]))
+          && (oldMap.keys().size() < 8
+            || ((oldMap.keys()[7] in newMap.keys())
+               && oldMap[oldMap.keys()[7]] == newMap[oldMap.keys()[7]]))
+          && (oldMap.keys().size() < 9
+            || ((oldMap.keys()[8] in newMap.keys())
+               && oldMap[oldMap.keys()[8]] == newMap[oldMap.keys()[8]]))
+          && (oldMap.keys().size() < 10
+            || ((oldMap.keys()[9] in newMap.keys())
+               && oldMap[oldMap.keys()[9]] == newMap[oldMap.keys()[9]]))
+          && (oldMap.keys().size() < 11
+            || ((oldMap.keys()[10] in newMap.keys())
+               && oldMap[oldMap.keys()[10]] == newMap[oldMap.keys()[10]]))
+          && (oldMap.keys().size() < 12
+            || ((oldMap.keys()[11] in newMap.keys())
+               && oldMap[oldMap.keys()[11]] == newMap[oldMap.keys()[11]]))
+        );
+    }
+
+    // True if leavingUid was the only removed key and everything else matches.
+    function scoresLeaveValid(oldMap, newMap, leavingUid) {
+      return !(leavingUid in newMap.keys())
+        && newMap.keys().size() == oldMap.keys().size() - 1
+        && (newMap.keys().size() == 0
+          // Every remaining key in newMap has the same value in oldMap.
+          || (newMap.keys().size() >= 1
+            && (newMap.keys()[0] in oldMap.keys())
+            && oldMap[newMap.keys()[0]] == newMap[newMap.keys()[0]])
+          && (newMap.keys().size() < 2
+            || ((newMap.keys()[1] in oldMap.keys())
+               && oldMap[newMap.keys()[1]] == newMap[newMap.keys()[1]]))
+          && (newMap.keys().size() < 3
+            || ((newMap.keys()[2] in oldMap.keys())
+               && oldMap[newMap.keys()[2]] == newMap[newMap.keys()[2]]))
+          && (newMap.keys().size() < 4
+            || ((newMap.keys()[3] in oldMap.keys())
+               && oldMap[newMap.keys()[3]] == newMap[newMap.keys()[3]]))
+          && (newMap.keys().size() < 5
+            || ((newMap.keys()[4] in oldMap.keys())
+               && oldMap[newMap.keys()[4]] == newMap[newMap.keys()[4]]))
+          && (newMap.keys().size() < 6
+            || ((newMap.keys()[5] in oldMap.keys())
+               && oldMap[newMap.keys()[5]] == newMap[newMap.keys()[5]]))
+          && (newMap.keys().size() < 7
+            || ((newMap.keys()[6] in oldMap.keys())
+               && oldMap[newMap.keys()[6]] == newMap[newMap.keys()[6]]))
+          && (newMap.keys().size() < 8
+            || ((newMap.keys()[7] in oldMap.keys())
+               && oldMap[newMap.keys()[7]] == newMap[newMap.keys()[7]]))
+          && (newMap.keys().size() < 9
+            || ((newMap.keys()[8] in oldMap.keys())
+               && oldMap[newMap.keys()[8]] == newMap[newMap.keys()[8]]))
+          && (newMap.keys().size() < 10
+            || ((newMap.keys()[9] in oldMap.keys())
+               && oldMap[newMap.keys()[9]] == newMap[newMap.keys()[9]]))
+          && (newMap.keys().size() < 11
+            || ((newMap.keys()[10] in oldMap.keys())
+               && oldMap[newMap.keys()[10]] == newMap[newMap.keys()[10]]))
+          && (newMap.keys().size() < 12
+            || ((newMap.keys()[11] in oldMap.keys())
+               && oldMap[newMap.keys()[11]] == newMap[newMap.keys()[11]]))
+        );
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && currentUid() == uid;
+    }
+
+    match /rooms/{code} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn();
+
+      // Host controls: host can always update any room field.
+      // Non-host cases: JOIN, SELF-LEAVE, TOGGLE self skipJudge, ROUND-ADVANCE (roundIndex only)
+      allow update: if isSignedIn() && resource.data.hostUid == currentUid()
+        || (
+          // ============================================================
+          // Case E — Round advance (roundIndex only).
+          // Triggered by clicking "Next Turn" (host-only button) OR by
+          // the 10s Scoreboard countdown auto-advance (fires on EVERY
+          // client that has the Scoreboard mounted → racing writes).
+          // Intent: only `roundIndex` touched; strictly +1 forward;
+          // caller is a current player in the room.
+          // ============================================================
+          (isPlayerInRoom(code)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['roundIndex'])
+            && request.resource.data.roundIndex is int
+            && resource.data.roundIndex is int
+            && request.resource.data.roundIndex == resource.data.roundIndex + 1)
+
+          ||
+          // Verified intent:
+          //   - currentUid NOT in old players
+          //   - currentUid IS in new players
+          //   - players/turnOrder sizes both +1
+          //   - only players, turnOrder, cumulativeScores touched
+          //   - cumulativeScores: existing keys preserved, new key = uid, value 0, size +1
+          // ============================================================
+          (isSignedIn()
+            && !uidInPlayers(currentUid(), resource.data.players)
+            && uidInPlayers(currentUid(), request.resource.data.players)
+            && request.resource.data.players.size() == resource.data.players.size() + 1
+            && request.resource.data.turnOrder.size() == resource.data.turnOrder.size() + 1
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players', 'turnOrder', 'cumulativeScores'])
+            && (scoresJoinValid(resource.data.cumulativeScores, request.resource.data.cumulativeScores, currentUid())
+              || (currentUid() in resource.data.cumulativeScores
+                && request.resource.data.cumulativeScores == resource.data.cumulativeScores)))
+
+          // ============================================================
+          // Case C — SELF-LEAVE: uid removes self from players/turnOrder/cumulativeScores.
+          // Optional extras allowed iff host promotion triggers (hostUid) or 0 left (state→ENDED).
+          // ============================================================
+          || (isPlayerInRoom(code)
+            && uidInPlayers(currentUid(), resource.data.players)
+            && !uidInPlayers(currentUid(), request.resource.data.players)
+            && request.resource.data.players.size() == resource.data.players.size() - 1
+            && !uidInStringList(currentUid(), request.resource.data.turnOrder)
+            && request.resource.data.turnOrder.size() == resource.data.turnOrder.size() - 1
+            && (scoresLeaveValid(resource.data.cumulativeScores, request.resource.data.cumulativeScores, currentUid())
+              || request.resource.data.cumulativeScores == resource.data.cumulativeScores)
+            && request.resource.data.get('matchPlayers', resource.data.players) == resource.data.get('matchPlayers', resource.data.players)
+            && request.resource.data.diff(resource.data).affectedKeys().size() >= 2
+            && request.resource.data.diff(resource.data).affectedKeys().size() <= 6
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'players', 'turnOrder', 'cumulativeScores', 'hostUid', 'state', 'matchPlayers'
+            ])
+            && (
+              (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players', 'turnOrder', 'cumulativeScores']))
+              || (
+                (
+                  ('hostUid' in request.resource.data.diff(resource.data).affectedKeys()
+                    && resource.data.hostUid == currentUid()
+                    && request.resource.data.players.size() > 0
+                    && request.resource.data.hostUid == request.resource.data.players[0].uid)
+                  || !(('hostUid' in request.resource.data.diff(resource.data).affectedKeys()))
+                )
+                && (
+                  ('state' in request.resource.data.diff(resource.data).affectedKeys()
+                    && request.resource.data.state == 'ENDED'
+                    && request.resource.data.players.size() == 0)
+                  || !(('state' in request.resource.data.diff(resource.data).affectedKeys()))
+                )
+              )))
+
+          // ============================================================
+          // Case D — TOGGLE self skipJudge.
+          // Only the 'players' key changes; uid set unchanged;
+          // for self: only skipJudge can differ, the other 4 fields
+          // (displayName, photoURL, isHost, connectedAt) are locked.
+          //
+          // Without .every() or variable iteration in rules, we cannot
+          // re-check every other player byte-for-byte without lambdas.
+          // However: host already controls everything, and non-hosts can
+          // otherwise only JOIN / LEAVE / skipJudge-toggle. Since the
+          // update here changes ONLY players AND uid set is preserved,
+          // any other-player tampering would be a pure "self-harm" for
+          // the non-host (they'd break someone else's display name on
+          // their client, but the host & next transaction still
+          // overwrite). We therefore relax Case D to "only players
+          // changed AND self skipJudge is the only self-change
+          // allowed." This still blocks write attempts on other fields
+          // (state, hostUid, scores, etc.) via hasOnly and size checks.
+          // ============================================================
+          || (isPlayerInRoom(code)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players'])
+            && request.resource.data.players.size() == resource.data.players.size()
+            // Self's skipJudge can differ; self's other fields must match resource.
+            && (
+                 // Find self by scanning first 12 slots (maxPlayers = 12).
+                 (resource.data.players.size() >= 1
+                   && resource.data.players[0].uid == currentUid()
+                   && request.resource.data.players[0].displayName == resource.data.players[0].displayName
+                   && request.resource.data.players[0].photoURL == resource.data.players[0].photoURL
+                   && request.resource.data.players[0].isHost == resource.data.players[0].isHost
+                   && request.resource.data.players[0].connectedAt == resource.data.players[0].connectedAt)
+              || (resource.data.players.size() >= 2
+                   && resource.data.players[1].uid == currentUid()
+                   && request.resource.data.players[1].displayName == resource.data.players[1].displayName
+                   && request.resource.data.players[1].photoURL == resource.data.players[1].photoURL
+                   && request.resource.data.players[1].isHost == resource.data.players[1].isHost
+                   && request.resource.data.players[1].connectedAt == resource.data.players[1].connectedAt)
+              || (resource.data.players.size() >= 3
+                   && resource.data.players[2].uid == currentUid()
+                   && request.resource.data.players[2].displayName == resource.data.players[2].displayName
+                   && request.resource.data.players[2].photoURL == resource.data.players[2].photoURL
+                   && request.resource.data.players[2].isHost == resource.data.players[2].isHost
+                   && request.resource.data.players[2].connectedAt == resource.data.players[2].connectedAt)
+              || (resource.data.players.size() >= 4
+                   && resource.data.players[3].uid == currentUid()
+                   && request.resource.data.players[3].displayName == resource.data.players[3].displayName
+                   && request.resource.data.players[3].photoURL == resource.data.players[3].photoURL
+                   && request.resource.data.players[3].isHost == resource.data.players[3].isHost
+                   && request.resource.data.players[3].connectedAt == resource.data.players[3].connectedAt)
+              || (resource.data.players.size() >= 5
+                   && resource.data.players[4].uid == currentUid()
+                   && request.resource.data.players[4].displayName == resource.data.players[4].displayName
+                   && request.resource.data.players[4].photoURL == resource.data.players[4].photoURL
+                   && request.resource.data.players[4].isHost == resource.data.players[4].isHost
+                   && request.resource.data.players[4].connectedAt == resource.data.players[4].connectedAt)
+              || (resource.data.players.size() >= 6
+                   && resource.data.players[5].uid == currentUid()
+                   && request.resource.data.players[5].displayName == resource.data.players[5].displayName
+                   && request.resource.data.players[5].photoURL == resource.data.players[5].photoURL
+                   && request.resource.data.players[5].isHost == resource.data.players[5].isHost
+                   && request.resource.data.players[5].connectedAt == resource.data.players[5].connectedAt)
+              || (resource.data.players.size() >= 7
+                   && resource.data.players[6].uid == currentUid()
+                   && request.resource.data.players[6].displayName == resource.data.players[6].displayName
+                   && request.resource.data.players[6].photoURL == resource.data.players[6].photoURL
+                   && request.resource.data.players[6].isHost == resource.data.players[6].isHost
+                   && request.resource.data.players[6].connectedAt == resource.data.players[6].connectedAt)
+              || (resource.data.players.size() >= 8
+                   && resource.data.players[7].uid == currentUid()
+                   && request.resource.data.players[7].displayName == resource.data.players[7].displayName
+                   && request.resource.data.players[7].photoURL == resource.data.players[7].photoURL
+                   && request.resource.data.players[7].isHost == resource.data.players[7].isHost
+                   && request.resource.data.players[7].connectedAt == resource.data.players[7].connectedAt)
+              || (resource.data.players.size() >= 9
+                   && resource.data.players[8].uid == currentUid()
+                   && request.resource.data.players[8].displayName == resource.data.players[8].displayName
+                   && request.resource.data.players[8].photoURL == resource.data.players[8].photoURL
+                   && request.resource.data.players[8].isHost == resource.data.players[8].isHost
+                   && request.resource.data.players[8].connectedAt == resource.data.players[8].connectedAt)
+              || (resource.data.players.size() >= 10
+                   && resource.data.players[9].uid == currentUid()
+                   && request.resource.data.players[9].displayName == resource.data.players[9].displayName
+                   && request.resource.data.players[9].photoURL == resource.data.players[9].photoURL
+                   && request.resource.data.players[9].isHost == resource.data.players[9].isHost
+                   && request.resource.data.players[9].connectedAt == resource.data.players[9].connectedAt)
+              || (resource.data.players.size() >= 11
+                   && resource.data.players[10].uid == currentUid()
+                   && request.resource.data.players[10].displayName == resource.data.players[10].displayName
+                   && request.resource.data.players[10].photoURL == resource.data.players[10].photoURL
+                   && request.resource.data.players[10].isHost == resource.data.players[10].isHost
+                   && request.resource.data.players[10].connectedAt == resource.data.players[10].connectedAt)
+              || (resource.data.players.size() >= 12
+                   && resource.data.players[11].uid == currentUid()
+                   && request.resource.data.players[11].displayName == resource.data.players[11].displayName
+                   && request.resource.data.players[11].photoURL == resource.data.players[11].photoURL
+                   && request.resource.data.players[11].isHost == resource.data.players[11].isHost
+                   && request.resource.data.players[11].connectedAt == resource.data.players[11].connectedAt)
+            ))
+        );
+    }
+
+    match /rooms/{code}/rounds/{rid} {
+      // Three valid create paths:
+      //   (A) Mid-game round (advanceRound): room is already PLAYING and the
+      //       new round's judgeUid is any valid player in the room. Any player
+      //       may perform this create because (a) the exact round index is
+      //       deterministic from turnOrder + roundIndex and (b) multiple
+      //       Scoreboard countdowns race to do it.
+      //   (B) Same as (A) but allow currentUid == judgeUid for stricter legacy
+      //       compatibility (in case advanceRound is ever run solely by the
+      //       next-judge client).
+      //   (C) Start-of-game round (startGame bootstrap): room is still LOBBY
+      //       in the pre-commit snapshot (because state=PLAYING is written in
+      //       the SAME commit as this round create). Caller must be the room
+      //       host (trusted); round.judgeUid must be a valid room player.
+      allow create: if isSignedIn()
+        && roomDoc(code) != null
+        && (
+             (roomDoc(code).state == 'PLAYING'
+               && uidInPlayers(request.resource.data.judgeUid, roomDoc(code).players))
+          || (roomDoc(code).state == 'PLAYING'
+               && request.resource.data.judgeUid == currentUid())
+          || (isHost(code) && roomDoc(code).state == 'LOBBY'
+                && uidInPlayers(request.resource.data.judgeUid, roomDoc(code).players))
+        );
+      allow read: if isSignedIn();
+      function validImageModifier(modifier) {
+        return modifier is map && (
+          (modifier.type in ['none', 'black-and-white'] && modifier.keys().hasOnly(['type']))
+          || (modifier.type == 'shuffle' && modifier.keys().hasOnly(['type', 'seed'])
+            && modifier.seed is string && modifier.seed.size() <= 64)
+          || (modifier.type == 'hue-shift' && modifier.keys().hasOnly(['type', 'degrees'])
+            && modifier.degrees is int && modifier.degrees >= -180 && modifier.degrees <= 180)
+        );
+      }
+      function canUpdateRound() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        let before = resource.data.state;
+        let after = request.resource.data.state;
+        let judge = resource.data.judgeUid == currentUid();
+        let startedAt = resource.data.get('startedAt', null);
+        let roundEnd = (startedAt is timestamp ? startedAt : request.time) + duration.value(resource.data.roundTimerSecs, 's');
+        let reviewEnd = resource.data.get('adjudicationStartedAt', roundEnd) + duration.value(resource.data.graceTimerSecs, 's');
+        return (!changed.hasAny(['imageModifier']) || (
+          judge && before == 'TURN_START' && after == 'PROCESSING'
+          && validImageModifier(request.resource.data.imageModifier)
+        )) && (
+          // Selecting an image and starting playback are owned by its presenter.
+          (judge && before in ['TURN_START', 'PROCESSING'])
+          || (judge && before == 'IN_PROGRESS' && changed.hasOnly(['playback']))
+          // Results and total scores are committed together, exactly once.
+          || (isHost(code) && before == 'ADJUDICATION_CLOSED' && after == 'SCORED'
+            && changed.hasOnly(['state', 'results', 'scoredAt'])
+            && request.resource.data.scoredAt == request.time)
+          // The presenter may close answers early; the host clock may do so
+          // after the guessing deadline. Review gets its own full duration.
+          || (before == 'IN_PROGRESS' && after == 'ADJUDICATION'
+            && changed.hasOnly(['state', 'adjudicationStartedAt'])
+            && request.resource.data.adjudicationStartedAt == request.time
+            && (judge || request.time >= roundEnd))
+          || (changed.hasOnly(['state']) && (
+            (before == 'ADJUDICATION' && after == 'ADJUDICATION_CLOSED'
+              && (judge || request.time >= reviewEnd))
+            // Compatibility with already-open clients using the old action.
+            || (judge && before == 'IN_PROGRESS' && after == 'ADJUDICATION_CLOSED')
+            || (before == 'SCORED' && after == 'SCOREBOARD')
+          )));
+      }
+      allow update: if isPlayerInRoom(code) && canUpdateRound();
+    }
+
+    match /rooms/{code}/rounds/{rid}/guesses/{gid} {
+      allow create: if isPlayerInRoom(code)
+        && roundDoc(code, rid) != null
+        && roundDoc(code, rid).state == 'IN_PROGRESS'
+        && request.resource.data.uid == currentUid()
+        && roundDoc(code, rid).judgeUid != currentUid()
+        && request.resource.data.submittedAt == request.time
+        && request.resource.data.verdict == null
+        && request.resource.data.get('stars', null) == null
+        && request.resource.data.verdictAt == null
+        && request.resource.data.verdictBy == null
+        && (
+          !exists(/databases/$(db)/documents/rooms/$(code)/rounds/$(rid)/_counter/meta)
+          || request.time.toMillis() - roundCounter(code, rid).lastGuessAtMs.get(currentUid(), 0) > 2000
+          || roundCounter(code, rid).lastGuessAtMs.get(currentUid(), 0) == 0
+        );
+      allow read: if isSignedIn();
+      allow update: if isJudgeOfRound(code, rid)
+        && roundDoc(code, rid) != null
+        && roundDoc(code, rid).state in ['IN_PROGRESS', 'ADJUDICATION']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verdict', 'stars', 'verdictAt', 'verdictBy'])
+        && (
+          (request.resource.data.verdict == null
+            && request.resource.data.get('stars', null) == null
+            && request.resource.data.verdictAt == null && request.resource.data.verdictBy == null)
+          || (request.resource.data.verdict in ['WRONG', 'CORRECT']
+            && request.resource.data.verdictAt == request.time
+            && request.resource.data.verdictBy == currentUid()
+            && ((request.resource.data.verdict == 'WRONG' && request.resource.data.get('stars', null) == null)
+              || (request.resource.data.verdict == 'CORRECT'
+                && request.resource.data.get('stars', 3) is int
+                && request.resource.data.get('stars', 3) in [1, 2, 3])))
+        );
+    }
+
+    match /rooms/{code}/rounds/{rid}/_counter/meta {
+      allow read: if isSignedIn();
+      allow create: if isPlayerInRoom(code);
+      allow update: if isPlayerInRoom(code);
+    }
+
+    match /user_decks/{uid}/deckMeta/meta {
+      allow read: if isSignedIn() && currentUid() == uid;
+      allow write: if isSignedIn() && currentUid() == uid;
+    }
+
+    match /user_decks/{uid}/images/{iid} {
+      allow read: if isSignedIn() && currentUid() == uid;
+      allow create: if isSignedIn() && currentUid() == uid
+        && (!exists(/databases/$(db)/documents/user_decks/$(uid)/deckMeta/meta)
+          || get(/databases/$(db)/documents/user_decks/$(uid)/deckMeta/meta).data.count < 50);
+      allow update: if isSignedIn() && currentUid() == uid;
+      allow delete: if isSignedIn() && currentUid() == uid;
+    }
+
+    match /app_settings/{docId} {
+      allow read: if isSignedIn();
+    }
+
   }
 }

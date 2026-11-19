@@ -18,22 +18,28 @@ ctx.onmessage = event => {
             break;
         case "step":
             geoEngine.step(value).then(
-                (value) => ctx.postMessage({ type, value, id })).catch(err => ({ type: "exception", value: err, id }))
+                (value) => ctx.postMessage({ type, value, id })
+            ).catch(err => ctx.postMessage({ type: "exception", value: err, id }))
             break;
         case "setOptions":
             geoEngine.setOptions(value).then(value => {
                 ctx.postMessage({ type, value, id })
-            }).catch(err => ({ type: "exception", value: err, id }))
+            }).catch(err => ctx.postMessage({ type: "exception", value: err, id }))
             break;
         case "getOPtions":
             geoEngine.getOPtions().then(value => {
                 ctx.postMessage({ type, value, id })
-            }).catch(err => ({ type: "exception", value: err, id }))
+            }).catch(err => ctx.postMessage({ type: "exception", value: err, id }))
             break;
         case "getShapesJSON":
             geoEngine.getShapesJSON().then(value => {
                 ctx.postMessage({ type, value, id })
-            }).catch(err => ({ type: "exception", value: err, id }))
+            }).catch(err => ctx.postMessage({ type: "exception", value: err, id }))
+            break;
+        case "getShapesCompact":
+            geoEngine.getShapesCompact().then(value => {
+                ctx.postMessage({ type, value, id })
+            }).catch(err => ctx.postMessage({ type: "exception", value: err, id }))
             break;
         default:
             break;

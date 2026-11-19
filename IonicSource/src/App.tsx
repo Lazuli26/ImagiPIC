@@ -1,20 +1,15 @@
 import {
   IonApp,
-  IonIcon,
-  IonLabel,
   IonRouterOutlet,
-  IonTabBar,
-  IonTabButton,
-  IonTabs,
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { ellipse, square, triangle } from 'ionicons/icons';
 import React, { createContext, useEffect, useMemo, useState } from 'react';
-import { Redirect, Route } from 'react-router-dom';
-import { Tab1 } from './pages/Tab1';
-import Tab2 from './pages/Tab2';
-import Tab3 from './pages/Tab3';
+import { Redirect, Route, Switch } from 'react-router-dom';
+import Home from './pages/Home';
+import Deck from './pages/Deck';
+import Profile from './pages/Profile';
+import RoomContainer from './pages/Room';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -34,52 +29,25 @@ import '@ionic/react/css/text-transformation.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import './pages/Home.css';
+import { ThemeProvider } from './theme/ThemeProvider';
+import { ThemeToggle } from './theme/ThemeControls';
+import Logo from './components/brand/Logo';
+import GeometryBackdrop from './components/brand/GeometryBackdrop';
+import ShapeShowcase from './components/showcase/ShapeShowcase';
+import GuestSignIn from './components/GuestSignIn';
 
-import firebase from 'firebase/compat/app';
 import * as firebaseui from 'firebaseui';
 import 'firebaseui/dist/firebaseui.css';
 
-
-// Import the functions you need from the SDKs you need
-import { getAnalytics } from "firebase/analytics";
-import { initializeApp } from "firebase/app";
-
-import { getAuth, GoogleAuthProvider, OAuthCredential, onAuthStateChanged, User } from "firebase/auth";
+import { EmailAuthProvider, GoogleAuthProvider, onAuthStateChanged, User } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth } from './firebase/auth';
+import { db } from './firebase/firebaseApp';
 
 setupIonicReact({
   mode: 'md'
 });
-
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyC5R-oLq_dgzWKyTiFjgWrCEZW2uVc8baU",
-  authDomain: "imagipic.firebaseapp.com",
-  databaseURL: "https://imagipic.firebaseio.com",
-  projectId: "imagipic",
-  storageBucket: "imagipic.appspot.com",
-  messagingSenderId: "830516369521",
-  appId: "1:830516369521:web:5a6076068c0fd37fc9a3d0",
-  measurementId: "G-B61EKG43BR"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const analytics = getAnalytics(app);
-
-const provider = new GoogleAuthProvider();
-provider.addScope(
-  'https://www.googleapis.com/auth/contacts.readonly')
-
-provider.addScope(
-  'https://www.googleapis.com/auth/user.birthday.read')
-
-const auth = getAuth();
 
 export const AuthContext = createContext(auth)
 export const UserAuthContext = createContext<{ user: User, idToken: string } | null>(null)
@@ -90,60 +58,62 @@ var ui = new firebaseui.auth.AuthUI(auth);
 
 //#endregion
 //@ts-ignore
-const App: React.FC = props => {
-  const [user, setUser] = useState<User | null>(null);
+const TabShell: React.FC = () => {
+  return (
+    <IonRouterOutlet>
+      <Route path="/home" component={Home} exact={true} />
+      <Route path="/deck" component={Deck} exact={true} />
+      <Route path="/profile" component={Profile} exact={true} />
+      <Route path="/" render={() => <Redirect to="/home" />} exact={true} />
+    </IonRouterOutlet>
+  );
+};
+
+//@ts-ignore
+const AppContent: React.FC = () => {
+  // A new wrapper also renders profile changes: Firebase mutates its User
+  // instance when updateProfile completes without another auth-state event.
+  const [session, setSession] = useState<{ user: User } | null>(null);
+  const user = session?.user || null;
+  const needsGuestName = !!user?.isAnonymous && !user.displayName?.trim();
   const [idToken, setIdToken] = useState<string>()
+  const [authResolved, setAuthResolved] = useState(false);
 
   //#region Firebase UI React
   const firebaseUiConfig: firebaseui.auth.Config = useMemo(() => ({
     callbacks:
     {
-      signInSuccessWithAuthResult: (authResult: any, redirectUrl: any) => {
-        var user: User = authResult.user;
-        var credential:OAuthCredential = authResult.credential;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        var isNewUser = authResult.additionalUserInfo.isNewUser;
-        var providerId = authResult.additionalUserInfo.providerId;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        var operationType = authResult.operationType;
-
-
-        switch (providerId) {
-          case GoogleAuthProvider.PROVIDER_ID:
-            // const credential = GoogleAuthProvider.credentialFromResult(authResult)
-            setUser(user)
-            setIdToken(credential.idToken)
-            if (credential.accessToken) {
-              localStorage.setItem("sessionAccessToken", credential.accessToken)
-            }
-            break;
-
-          default:
-            break;
-        }
+      signInSuccessWithAuthResult: () => {
+        // onAuthStateChanged supplies the Firebase user and ID token.
+        // Google API access tokens are unnecessary for signing into ImagiPIC.
         // Do something with the returned AuthResult.
         // Return type determines whether we continue the redirect
         // automatically or whether we leave that to developer to handle.
-        return true;
+        return false;
       }
     }
 
     ,
     // signInSuccessUrl: '<url-to-redirect-to-on-success>',
-    signInOptions: [{
-      provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-      scopes: [
-      ]
-    }
-      // Leave the lines as is for the providers you want to offer your users.
-      ,
-    //firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-    //firebase.auth.TwitterAuthProvider.PROVIDER_ID,
-    //firebase.auth.GithubAuthProvider.PROVIDER_ID,
-    //firebase.auth.EmailAuthProvider.PROVIDER_ID,
-    //firebase.auth.PhoneAuthProvider.PROVIDER_ID,
-    //firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID
+    signInOptions: [
+      {
+        provider: EmailAuthProvider.PROVIDER_ID,
+        signInMethod: EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD,
+        requireDisplayName: true,
+      },
+      {
+        provider: GoogleAuthProvider.PROVIDER_ID,
+        // No additional Google API permissions are needed.
+        scopes: [],
+      },
     ],
+    // signInFlow='popup' skips the OAuth redirect round-trip through
+    // authDomain (imagipic.firebaseapp.com/__/auth/handler) entirely.
+    // Without this, some Chrome-extension Content Security Policies block
+    // blob:// script injection that Firebase's handler page uses to hand
+    // the OAuth credential back to the localhost app → user appears
+    // signed-out after Google's redirect → auth widget re-renders → loop.
+    signInFlow: 'popup',
     // tosUrl and privacyPolicyUrl accept either url string or a callback
     // function.
     // Terms of service url/callback.
@@ -156,48 +126,89 @@ const App: React.FC = props => {
 
 
   useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
+    // Remove unused Google API tokens saved by earlier versions.
+    localStorage.removeItem('sessionAccessToken');
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthResolved(true);
       if (user) {
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/firebase.User
-        user.getIdToken().then(idToken => {
-          setUser(user)
-          setIdToken(idToken)
-        })
+        // Render the signed-in app as soon as Firebase restores the session.
+        // Token refresh and profile synchronization can finish in the background.
+        setSession({ user });
+        setIdToken(undefined);
+        user.getIdToken().then(token => {
+          if (auth.currentUser?.uid === user.uid) setIdToken(token);
+        }).catch(() => void 0);
+      } else {
+        // Signed out: reset local auth state so any prior user/token
+        // doesn't linger and cause a false "signed in" render.
+        setSession(null);
+        setIdToken(undefined);
+
       }
-      else
-      // The start method will wait until the DOM is loaded.`
-      ui.start('#firebaseui-auth-container', firebaseUiConfig);
-    })
+    });
+    return () => {
+      unsubscribe();
+    };
   }, [firebaseUiConfig])
 
-  return user && idToken ? <UserAuthContext.Provider value={{ user: user, idToken: idToken }}><IonApp>
+  useEffect(() => {
+    if (!session || needsGuestName) return;
+    const { user } = session;
+    const syncProfile = async () => {
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userDocRef);
+        if (auth.currentUser?.uid !== user.uid) return;
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          displayName: user.displayName || 'Jugador',
+          photoURL: user.photoURL || '',
+          email: user.email || '',
+          ...(!snap.exists() ? { createdAt: serverTimestamp() } : {}),
+          lastSeenAt: serverTimestamp(),
+        }, { merge: true });
+      } catch (_error) {
+        // Profile synchronization is best effort; playing does not wait on it.
+      }
+    };
+    syncProfile();
+  }, [session, needsGuestName]);
+
+  // Mount the widget only after React has rendered its container, including
+  // when returning to sign-in after signing out.
+  useEffect(() => {
+    if (!authResolved || user) return;
+    ui.start('#firebaseui-auth-container', firebaseUiConfig);
+    return () => {
+      ui.reset();
+    };
+  }, [authResolved, user, firebaseUiConfig]);
+
+  return !authResolved ? <IonApp><main className="auth-loading" role="status" aria-label="Comprobando sesión"><Logo /><p>Comprobando tu sesión…</p></main></IonApp> : user && !needsGuestName ? <UserAuthContext.Provider value={{ user, idToken: idToken || '' }}><IonApp>
     <IonReactRouter>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route path="/tab1" component={Tab1} exact={true} />
-          <Route path="/tab2" component={Tab2} exact={true} />
-          <Route path="/tab3" component={Tab3} />
-          <Route path="/" render={() => <Redirect to="/tab1" />} exact={true} />
-        </IonRouterOutlet>
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="tab1" href="/tab1">
-            <IonIcon icon={triangle} />
-            <IonLabel>Tab 1</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab2" href="/tab2">
-            <IonIcon icon={ellipse} />
-            <IonLabel>Tab 2</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab3" href="/tab3">
-            <IonIcon icon={square} />
-            <IonLabel>Tab 3</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      </IonTabs>
+      <Switch>
+        <Route path="/room/:code" component={RoomContainer} exact={true} />
+        <Route path="/" component={TabShell} />
+      </Switch>
     </IonReactRouter>
   </IonApp>
-  </UserAuthContext.Provider> : <div id="firebaseui-auth-container" />
+  </UserAuthContext.Provider> : <IonApp><main className="guest-page">
+    <GeometryBackdrop />
+    <header className="guest-header"><Logo /><ThemeToggle /></header>
+    <div className="home-shell"><section className="home-hero">
+      <div className="home-copy"><span className="page-eyebrow">BIENVENIDO A IMAGIPIC</span>
+        <h1>Tu próxima idea<br />empieza <span>aquí<svg viewBox="0 0 300 16" aria-hidden="true"><path d="M3 11Q150-5 297 9" /></svg></span>.</h1>
+        <p>Adivina imágenes que cobran vida forma a forma. Reúne a tus amigos, cambia de perspectiva y descubre quién tiene mejor ojo.</p>
+        <div className="signin-panel">
+          <GuestSignIn needsName={needsGuestName} onComplete={user => { if (auth.currentUser?.uid === user.uid) setSession({ user }); }} />
+          {!user && <><p className="signin-divider">O entra con tu cuenta</p><div id="firebaseui-auth-container" /></>}
+        </div>
+        <details className="signin-privacy"><summary>Tu cuenta, tus imágenes</summary><p>Puedes jugar como invitado con un nombre de usuario, o iniciar sesión con correo o Google para conservar tu cuenta y tu mazo. Google comparte tu nombre, correo y foto de perfil para identificarte. No solicitamos acceso a Gmail, Drive ni contactos.</p></details>
+        <div className="home-footnote"><span className="friends-symbol" aria-hidden="true">○ △ □</span><span>Una sala, tus amigos y muchas ideas.<br /><strong>De 2 a 12 personas · Sin descargar nada</strong></span></div>
+      </div><div className="home-art-pane"><ShapeShowcase /></div>
+    </section></div>
+  </main></IonApp>
 }
 
+const App: React.FC = () => <ThemeProvider><AppContent /></ThemeProvider>;
 export default App;

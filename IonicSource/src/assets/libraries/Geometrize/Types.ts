@@ -1,4 +1,5 @@
 import { Bitmap, ImageRunnerOptions } from "geometrizejs"
+import { CompactShapeRow } from "../../../utils/compactShapeCodec";
 
 export interface GeometrizeOptions extends ImageRunnerOptions {
     maxPixels: number
@@ -10,6 +11,7 @@ export interface GeometrizeInstance {
     setOptions(options: GeometrizeOptions): Promise<void>
     getOPtions(): Promise<GeometrizeOptions | undefined>
     getShapesJSON(): Promise<string[]>
+    getShapesCompact(): Promise<CompactShapeRow[]>
     // setImage(imageURL: string): Promise<Bitmap>
 }
 

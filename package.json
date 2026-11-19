@@ -1,0 +1,17 @@
+{
+  "name": "imagipic",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ImagiPIC geometric-shape Pictionary/Skribbl.io variant (Phase 1 MVP)",
+  "devDependencies": {
+    "firebase-tools": "^13.30.0"
+  },
+  "scripts": {
+    "deploy": "firebase deploy",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:firestore": "firebase deploy --only firestore",
+    "deploy:rules": "firebase deploy --only firestore:rules",
+    "deploy:storage": "firebase deploy --only storage",
+    "test:gameplay": "firebase emulators:exec --only firestore --project demo-imagipic-gameplay --config firebase.gameplay-test.json \"node IonicSource/scripts/test-gameplay.cjs\""
+  }
+}

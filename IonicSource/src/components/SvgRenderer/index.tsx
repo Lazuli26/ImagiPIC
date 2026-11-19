@@ -1,69 +1,50 @@
-import _, { isString } from 'lodash'
-import React, { FC, useEffect, useState } from 'react'
+import { isString } from 'lodash'
+import React, { FC } from 'react'
 import './index.scss';
-/*
-const geometrizeViewStyle = {
-    landscape: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "75vh",
-        width: "50vw"
-    },
-    portrait: {
-        display: "flex",
-        justifyContent: "center",
-        padding: "7.5vw 0",
-        height: "50vh",
-        maxHeight: "50vh",
-        maxWidth: "100vw"
-    }
-}
-*/
-interface svgConfig {
-    viewBox: {
-        width: number,
-        height: number
-    },
-    svg: {
-        width: number,
-        height: number
-    }
-}
-const scaleToWindow = (minSize: number, maxSize: number): [number, number] => {
-    maxSize = maxSize / minSize
-    minSize = _.max([window.innerWidth, window.innerHeight]) ?? minSize
-    maxSize = maxSize * minSize;
 
-    return [minSize, maxSize]
+interface SvgRendererProps {
+  shapes: string[] | string;
+  width: number;
+  height: number;
+  maxWidth?: number | string;
+  maxHeight?: number | string;
 }
-const SvgRenderer: FC<{ shapes: string[] | string, width: number, height: number }> = ({ shapes, width, height }) => {
-    //const windowLandscape = window.innerWidth >= window.innerHeight;
-    //const imgLandscape = width >= height;
-    const [svgConfig, setViewBoxSize] = useState<svgConfig | null>(null)
-    useEffect(() => {
-        const [svgWidth, svgHeight] = width < height ?
-            scaleToWindow(width, height) :
-            scaleToWindow(height, width).reverse()
-        setViewBoxSize({
-            svg: {
-                width: svgWidth,
-                height: svgHeight
-            },
-            viewBox: {
-                width: width,
-                height: height
-            }
-        })
-    }, [width, height])
-    return svgConfig ? <div
-        className="svgViewPort"
-        children={
-            <div className="svgElement" children={<>
-                <svg width={svgConfig.svg.width} height={svgConfig.svg.height} viewBox={`0 0 ${svgConfig.viewBox.width} ${svgConfig.viewBox.height}`} dangerouslySetInnerHTML={{ __html: isString(shapes) ? shapes : shapes.join('\n') }} />                
-            </>} />
-        } />
-        : <></>
+
+const SvgRenderer: FC<SvgRendererProps> = ({ shapes, width, height, maxWidth, maxHeight }) => {
+  if (
+    typeof width !== 'number' || !Number.isFinite(width) || width <= 0 ||
+    typeof height !== 'number' || !Number.isFinite(height) || height <= 0
+  ) {
+    return <></>;
+  }
+  const shapeHtml = isString(shapes) ? shapes : (Array.isArray(shapes) ? shapes.join('\n') : '');
+  const viewBox = `0 0 ${width} ${height}`;
+  return (
+    <div
+      className="svgViewPort"
+      style={{
+        width: '100%',
+        maxWidth: maxWidth ?? '100%',
+        maxHeight: maxHeight ?? '70vh',
+        aspectRatio: `${width} / ${height}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0 auto',
+      }}
+    >
+      <div className="svgElement" style={{ width: '100%', height: '100%' }}>
+        <svg
+          className="geometric-image"
+          width="100%"
+          height="100%"
+          viewBox={viewBox}
+          preserveAspectRatio="xMidYMid slice"
+          dangerouslySetInnerHTML={{ __html: shapeHtml }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default SvgRenderer

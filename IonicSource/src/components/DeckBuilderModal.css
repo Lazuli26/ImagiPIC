@@ -1,0 +1,63 @@
+.deck-builder-modal { --width: 760px; --height: min(90vh, 800px); --ion-background-color: var(--app-surface); --ion-toolbar-background: var(--app-surface); --ion-text-color: var(--app-text); }
+.deck-builder-modal ion-title { font-size: 18px; }
+.deck-builder-modal ion-button { text-transform: none; letter-spacing: 0; --border-radius: 12px; }
+.builder-body { max-width: 680px; margin: 0 auto; padding: 12px 18px; color: var(--app-text); }
+.builder-body .image-search-tabs { justify-content: flex-start; margin: 0 0 10px; }
+.builder-body .commons-search { border: 0; padding: 0; margin: 0; box-shadow: none; }
+.builder-body .commons-search-heading h3 { font-size: 15px; }
+.builder-body .commons-search-heading p { font-size: 12px; margin-bottom: 12px; }
+.builder-body .commons-search-note { font-size: 10px; margin-top: 12px; }
+.builder-import-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 12px; border-top: 1px solid var(--app-border); padding-top: 6px; }
+.builder-import-actions ion-button { font-size: 12px; }
+.builder-body .builder-image-ready { margin: 8px 0; text-align: center; font-size: 12px; color: var(--app-success); }
+.builder-body .builder-format-note { font-size: 11px; text-align: center; margin: 6px 0; }
+.builder-body .builder-source-credit { font-size: 11px; margin: 6px 0; }
+.builder-source-credit summary { cursor: pointer; }
+.builder-body .clipboard-error, .builder-error { font-size: 12px; color: var(--app-error); background: var(--app-error-bg); border-radius: 10px; padding: 10px; }
+.builder-source-preview, .builder-canvas { position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--app-inset); border-radius: 14px; }
+.builder-source-preview { height: min(52vh, 420px); }
+.builder-source-preview > img, .builder-canvas > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.builder-discard { position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border: 1px solid var(--app-border); border-radius: 50%; font-size: 26px; color: var(--app-text); background: var(--app-surface); cursor: pointer; }
+.builder-crop-stage { position: relative; width: 100%; height: 100%; background: #0f172a; }
+.builder-crop-stage img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.builder-crop-box { position: absolute; border: 2px solid #fff; border-radius: 10px; box-shadow: 0 0 0 9999px #0f172a88; touch-action: none; cursor: move; }
+.builder-crop-handle { position: absolute; bottom: -10px; right: -10px; width: 28px; height: 28px; background: #fff; border: 2px solid var(--app-accent); border-radius: 50%; touch-action: none; cursor: nwse-resize; }
+.builder-screen-2 { display: grid; gap: 10px; }
+.builder-canvas { height: clamp(96px, 28vh, 240px); }
+.builder-canvas .svgViewPort { width: auto !important; height: 100%; max-width: 100%; }
+.builder-progress-label { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); padding: 5px 10px; border-radius: 99px; background: var(--app-surface); color: var(--app-text); font-size: 11px; white-space: nowrap; }
+.builder-name { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+.builder-name span { color: var(--app-muted); font-weight: 400; font-size: 11px; }
+.builder-name input { min-width: 0; width: 100%; padding: 9px 10px; border: 1px solid var(--app-border); border-radius: 9px; background: var(--app-inset); color: var(--app-text); font: inherit; font-weight: 400; }
+.builder-shapes { margin: 0; padding: 0; border: 0; min-width: 0; }
+.builder-shapes legend { padding: 0 0 6px; font-size: 12px; font-weight: 700; }
+.builder-shapes > div { display: flex; gap: 5px; flex-wrap: wrap; }
+.builder-shapes button { display: inline-flex; gap: 4px; align-items: center; padding: 5px 8px; min-height: 36px; border: 1px solid var(--app-border); border-radius: 10px; background: var(--app-surface); color: var(--app-text); font: inherit; font-size: 11px; cursor: pointer; }
+.builder-shapes button[aria-pressed="true"] { border-color: var(--app-accent); background: var(--app-tint); color: var(--app-tint-text); box-shadow: inset 0 0 0 1px var(--app-accent); }
+.builder-shapes svg { flex-shrink: 0; width: 23px; height: 23px; }
+.builder-shapes:disabled { opacity: .6; }
+.builder-advanced { font-size: 12px; border-top: 1px solid var(--app-border); }
+.builder-advanced summary { min-height: 36px; padding: 10px 0; cursor: pointer; font-weight: 700; color: var(--app-accent); }
+.builder-advanced fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.builder-advanced label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; font-weight: 600; }
+.builder-advanced input[type="range"] { width: 100%; accent-color: var(--app-accent); }
+.builder-advanced input[type="number"] { width: 95px; padding: 8px; border: 1px solid var(--app-border); border-radius: 8px; background: var(--app-inset); color: var(--app-text); }
+.builder-advanced p { font-size: 11px; line-height: 1.5; color: var(--app-muted); margin: 6px 0 12px; }
+.builder-playback-slider { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 11px; color: var(--app-muted); }
+.builder-playback-slider input { min-width: 0; flex: 1; accent-color: var(--app-accent); }
+.builder-playback-slider ion-progress-bar { flex-basis: 100%; }
+.builder-footer { background: var(--app-surface); border-top: 1px solid var(--app-border); }
+.builder-footer > div { display: flex; align-items: center; gap: 4px; max-width: 680px; padding: 8px 12px max(8px, env(safe-area-inset-bottom)); margin: 0 auto; }
+.builder-footer ion-button { min-height: 42px; margin: 0; font-size: 12px; }
+.builder-footer .builder-primary-action, .builder-footer ion-button:only-child { flex: 1; }
+.builder-help { padding: 18px; color: var(--app-text); font-size: 13px; line-height: 1.6; background: var(--app-surface); }
+.builder-help p { margin: 8px 0; }
+.builder-body button:focus-visible, .builder-body input:focus-visible, .builder-body summary:focus-visible { outline: 3px solid var(--app-lilac); outline-offset: 2px; }
+@media (max-width: 600px) {
+  .deck-builder-modal { --width: 100%; --height: 100%; --border-radius: 0; }
+  .builder-body { padding: 10px 12px; }
+  .builder-name { grid-template-columns: auto 1fr; }
+  .builder-name span { display: none; }
+  .builder-screen-2 { gap: 8px; }
+}
+@media (max-height: 640px) { .builder-canvas { height: clamp(80px, 24vh, 150px); } .builder-source-preview { height: 42vh; } }

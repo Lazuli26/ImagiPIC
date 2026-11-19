@@ -1,0 +1,139 @@
+.game-room ion-toolbar { --border-color: var(--app-border); }
+.game-room ion-title { font-size: clamp(14px, 2.5vw, 19px); font-weight: 750; padding-inline: 10px; }
+.game-room ion-button { --border-radius: 12px; font-weight: 700; text-transform: none; letter-spacing: 0; }
+.game-shell { width: min(1120px, 100%); padding: 32px 24px 48px; margin: 0 auto; color: var(--app-text); box-sizing: border-box; }
+.game-shell h1 { font-size: clamp(28px, 3.6vw, 42px); letter-spacing: -1.3px; font-weight: 800; margin: 10px 0; line-height: 1.15; }
+.game-shell h2 { font-size: 20px; font-weight: 750; margin: 0 0 16px; }
+.game-shell p { line-height: 1.6; color: var(--app-muted); }
+.game-eyebrow { font-size: 11px; letter-spacing: 2px; font-weight: 800; color: var(--app-accent); }
+.lobby-intro { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-bottom: 28px; }
+.lobby-intro p { margin: 10px 0; }
+.invite-card { display: flex; flex-direction: column; align-items: center; background: var(--app-tint); border: 1px dashed var(--app-lilac); border-radius: 20px; padding: 14px 28px 8px; flex-shrink: 0; }
+.invite-card > span { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--app-tint-text); }
+.invite-card strong { font-family: monospace; letter-spacing: 5px; font-size: 32px; color: var(--app-accent); margin: 5px 0 0; }
+.invite-card ion-button { font-size: 12px; }
+.lobby-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 24px; align-items: start; }
+.game-card { background: var(--app-surface); border: 1px solid var(--app-border); border-radius: 22px; padding: 24px; box-shadow: 0 5px 20px var(--app-shadow); min-width: 0; }
+.game-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.game-card-heading h2 { margin: 0; }
+.game-pill { display: inline-block; font-size: 11px; background: var(--app-inset); border-radius: 8px; padding: 6px 10px; font-weight: 700; color: var(--app-muted); white-space: nowrap; }
+.lobby-player { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--app-border); }
+.player-avatar { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; background: var(--app-tint); color: var(--app-accent); border-radius: 14px; overflow: hidden; font-weight: 800; }
+.player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.player-description { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.player-description strong { font-size: 14px; }
+.player-description small, .role-setting small { display: block; font-size: 11px; color: var(--app-muted); margin-top: 5px; }
+.role-setting { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 0; }
+.role-setting strong { font-size: 13px; }
+.how-to-play { border-radius: 14px; background: var(--app-inset); padding: 18px; margin-top: 10px; }
+.how-to-play h3 { margin: 0 0 12px; font-size: 14px; font-weight: 800; }
+.how-to-play ol { padding-left: 20px; margin: 0; color: var(--app-muted); font-size: 13px; line-height: 1.6; }
+.how-to-play li + li { margin-top: 8px; }
+.how-to-play p { margin-bottom: 0; font-size: 11px; }
+.game-setting { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px 0; border-bottom: 1px solid var(--app-border); }
+.game-setting > span { font-weight: 700; font-size: 13px; }
+.game-setting small { display: block; margin-top: 5px; font-weight: 400; color: var(--app-muted); line-height: 1.5; font-size: 11px; }
+.game-setting select { max-width: 180px; width: 45%; padding: 11px 10px; border: 1px solid var(--app-border); border-radius: 10px; background: var(--app-inset); color: var(--app-text); font: inherit; font-size: 12px; flex-shrink: 0; cursor: pointer; }
+.game-setting select:disabled { opacity: .8; cursor: default; }
+.game-setting select:focus-visible { outline: 3px solid var(--app-lilac); }
+.match-estimate { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin: 20px 0; padding: 14px; border-radius: 12px; background: var(--app-tint); color: var(--app-tint-text); font-size: 11px; }
+.lobby-actions { margin-top: 8px; display: grid; gap: 6px; }
+.game-shell .game-hint, .game-hint { font-size: 12px; line-height: 1.5; text-align: center; color: var(--app-muted); }
+.game-shell .game-error, .game-error { color: var(--app-error); background: var(--app-error-bg); padding: 12px 16px; border-radius: 12px; font-size: 13px; }
+.game-shell .game-notice { background: var(--app-tint); color: var(--app-tint-text); border-radius: 12px; padding: 12px 16px; font-size: 12px; }
+.room-error { margin: 12px; display: flex; justify-content: space-between; align-items: center; }
+.results-heading { text-align: center; margin: 4px auto 28px; }
+.results-heading p { font-size: 14px; margin: 12px 0 16px; }
+.results-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 24px; align-items: start; }
+.result-image { aspect-ratio: 1; width: 100%; max-height: 380px; background: var(--app-inset); border-radius: 14px; overflow: hidden; }
+.result-image svg { width: 100%; height: 100%; display: block; }
+.reveal-card > p { font-size: 12px; margin-bottom: 0; }
+.standings-wrap { overflow-x: auto; }
+.standings-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; color: var(--app-text); }
+.standings-table thead { font-size: 10px; color: var(--app-muted); text-transform: uppercase; letter-spacing: .6px; }
+.standings-table th, .standings-table td { padding: 13px 8px; border-bottom: 1px solid var(--app-border); }
+.standings-table th { font-weight: 600; }
+.standings-table td:last-child, .standings-table th:last-child { text-align: right; white-space: nowrap; }
+.standings-table td:first-child { width: 40px; }
+.standings-table .is-self { background: var(--app-tint); }
+.standings-table small { color: var(--app-muted); font-size: 10px; }
+.standing-player { display: flex; align-items: center; gap: 10px; overflow-wrap: anywhere; }
+.standing-player .player-avatar { width: 32px; height: 32px; border-radius: 10px; }
+.rank-medal { font-size: 17px; }
+.turn-points { color: var(--app-success); font-weight: 700; }
+.round-history { margin-top: 20px; font-size: 12px; }
+.round-history summary { cursor: pointer; font-weight: 700; padding: 10px 0; color: var(--app-accent); }
+.history-table { font-size: 11px; }
+.history-table th, .history-table td { padding: 10px; white-space: nowrap; }
+.history-table td:first-child { width: auto; }
+.results-next { margin-top: 24px; text-align: center; }
+.results-next p { font-size: 13px; }
+.results-next ion-progress-bar { border-radius: 8px; height: 5px; margin-bottom: 18px; }
+.final-trophy { font-size: 64px; line-height: 1.5; animation: trophy-arrive .5s ease-out; }
+.final-table { max-width: 740px; margin: 0 auto; }
+.final-table h2 { text-align: center; }
+.final-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.end-match-action { margin-top: 28px; border-top: 1px solid var(--app-border); text-align: center; padding-top: 14px; }
+.scores-modal { --ion-background-color: var(--app-surface); --ion-text-color: var(--app-text); --ion-toolbar-background: var(--app-surface); --width: 720px; --height: 640px; --border-radius: 20px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+@keyframes trophy-arrive { from { opacity: 0; transform: translateY(12px) scale(.85); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .final-trophy { animation: none; } }
+@media (max-width: 760px) {
+  .game-shell { padding: 20px 14px 32px; }
+  .lobby-intro { gap: 16px; align-items: flex-start; }
+  .lobby-intro h1 { font-size: 27px; }
+  .lobby-intro p { font-size: 12px; }
+  .invite-card { padding: 12px 14px 4px; }
+  .invite-card strong { font-size: 23px; letter-spacing: 3px; }
+  .invite-card ion-button { font-size: 10px; }
+  .lobby-grid, .results-grid { grid-template-columns: 1fr; gap: 16px; }
+  .game-card { padding: 20px 16px; border-radius: 18px; }
+  .reveal-card { max-width: 460px; width: 100%; margin: 0 auto; }
+  .result-image { max-height: 260px; }
+  .game-eyebrow { font-size: 9px; letter-spacing: 1px; }
+  .game-setting { gap: 10px; }
+  .game-card-heading h2 { font-size: 18px; }
+  .scores-button-label { display: none; }
+}
+@media (max-width: 390px) { .lobby-intro { flex-direction: column; } .invite-card { width: 100%; flex-direction: row; justify-content: space-between; gap: 10px; } .invite-card > span { display: none; } .standings-table th, .standings-table td { padding: 12px 4px; } }
+
+.judge-action-bar { flex: 0 0 auto; background: var(--app-surface); border-bottom: 1px solid var(--app-border); }
+.judge-action-bar .game-hint { margin: 5px 12px; }
+.judge-complete-notice { margin: 10px 12px; padding: 12px; background: var(--app-success-bg); border: 1px solid var(--app-success); border-radius: 14px; }
+.judge-complete-notice > div { display: flex; align-items: center; gap: 10px; color: var(--app-success); }
+.judge-complete-notice > div > ion-icon { font-size: 30px; flex-shrink: 0; }
+.judge-complete-notice strong { font-size: 16px; }
+.judge-complete-notice p { color: var(--app-text); font-size: 12px; line-height: 1.4; margin: 4px 0 0; }
+.judge-complete-notice ion-button { width: 100%; margin: 10px 0 0; min-height: 44px; }
+.judge-guess-progress { padding: 8px 0 10px; font-size: 12px; }
+.judge-guess-progress > div { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.judge-guess-progress span:not(.sr-only) { padding: 4px 8px; border-radius: 99px; color: var(--app-muted); background: var(--app-inset); overflow-wrap: anywhere; }
+.judge-guess-progress span.is-correct { color: var(--app-success); background: var(--app-success-bg); }
+.image-modifiers { margin: 10px 12px; padding: 10px 12px; min-width: 0; border: 1px solid var(--app-border); border-radius: 12px; color: var(--app-text); }
+.image-modifiers legend { padding: 0 5px; font-size: 12px; font-weight: 750; }
+.image-modifier-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.image-modifier-options label { display: flex; align-items: center; gap: 5px; padding: 7px 9px; border: 1px solid var(--app-border); border-radius: 9px; background: var(--app-inset); font-size: 11px; cursor: pointer; }
+.image-modifier-options .is-selected { background: var(--app-tint); border-color: var(--app-accent); color: var(--app-tint-text); }
+.image-modifier-options input { margin: 0; accent-color: var(--app-accent); }
+.image-modifiers:disabled { opacity: .65; }
+.image-modifier-setting { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin-top: 10px; }
+.image-modifier-setting label { flex: 1; min-width: 120px; font-size: 12px; }
+.image-modifier-setting input { display: block; width: 100%; margin-top: 6px; accent-color: var(--app-accent); }
+.image-modifier-setting input[type="text"] { padding: 7px 9px; border: 1px solid var(--app-border); border-radius: 8px; background: var(--app-inset); color: var(--app-text); font: inherit; }
+.image-modifier-setting button { border: 1px solid var(--app-border); border-radius: 8px; padding: 8px 10px; background: var(--app-tint); color: var(--app-tint-text); font: inherit; font-size: 11px; cursor: pointer; }
+.image-modifier-hint, .image-modifier-setting p { flex-basis: 100%; margin: 8px 0 0; font-size: 11px; line-height: 1.4; color: var(--app-muted); }
+.writing-notice { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 12px; color: var(--app-muted); }
+.game-room { height: var(--room-viewport-height, 100%); top: var(--room-viewport-top, 0px); bottom: auto; }
+/* The page already follows the visible viewport; Ionic's keyboard padding
+   would subtract the keyboard a second time on iOS. */
+.game-room ion-content { --keyboard-offset: 0px !important; }
+.guess-composer { padding-bottom: max(8px, env(safe-area-inset-bottom)) !important; }
+.guess-composer input { -webkit-text-size-adjust: 100%; }
+
+.turn-image-preview { max-width: 720px; margin: 0 auto; }
+.turn-image-preview-canvas { aspect-ratio: 1 / 1; width: 100%; max-width: 420px; margin: 16px auto; background: var(--app-inset); border-radius: 18px; overflow: hidden; }
+.preview-progress { display: grid; gap: 8px; margin: 16px 0; }
+.preview-progress input { width: 100%; }
+.turn-image-preview-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.guess-verdict-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.guess-verdict-actions ion-button { min-height: 44px; margin: 0; }

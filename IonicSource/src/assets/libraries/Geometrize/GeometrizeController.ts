@@ -1,5 +1,6 @@
 /* eslint-disable import/no-webpack-loader-syntax */
 import { Bitmap } from "geometrizejs";
+import { CompactShapeRow } from "../../../utils/compactShapeCodec";
 import { GeometrizeInstance, GeometrizeOptions, geoSubscription, PromiseCallBack } from "./Types";
 
 import GeometrizeWorker from "worker-loader!./GeometrizeWorker";
@@ -8,6 +9,7 @@ export class GeometrizeController implements GeometrizeInstance {
     worker?: GeometrizeWorker;
     promiseCallbackQueue = new Array<PromiseCallBack>()
     currentBitMap?: Bitmap
+    private _pendingOptions?: GeometrizeOptions;
 
     private queueCallBack(resolve: PromiseCallBack["resolve"], reject: PromiseCallBack["reject"], name: string) {
         let id = Math.max(...this.promiseCallbackQueue.map(v => v.id), 0) + 1
@@ -23,12 +25,50 @@ export class GeometrizeController implements GeometrizeInstance {
     }
 
     private postMessage(payload: { type: keyof GeometrizeInstance; value?: any, id: number }) {
-        if (this.worker)
+        if (payload.type === "setOptions") {
+            this._pendingOptions = payload.value as GeometrizeOptions;
+        }
+        if (this.worker) {
             this.worker.postMessage(payload)
-        else {
-            const message = "Cannot call any controller function without initializing first"
-            this.removeCallBackByID(payload.id).reject(message)
-            throw new Error(message);
+            return
+        }
+        // Controller not yet initialized (initialize() has not been called / no worker
+        // started yet). For idempotent / safe calls we return a sensible local result
+        // instead of rejecting — this lets callers set options / query state before
+        // an image is loaded without crashing.
+        switch (payload.type) {
+            case "setOptions":
+                // Options already stashed above. Resolve immediately.
+                this.removeCallBackByID(payload.id).resolve(undefined)
+                this.broadCast()
+                return
+            case "getOPtions":
+                this.removeCallBackByID(payload.id).resolve(this._pendingOptions)
+                this.broadCast()
+                return
+            case "getShapesJSON":
+                this.removeCallBackByID(payload.id).resolve([] as string[])
+                this.broadCast()
+                return
+            case "getShapesCompact":
+                this.removeCallBackByID(payload.id).resolve([] as CompactShapeRow[])
+                this.broadCast()
+                return
+            case "step":
+                // No image loaded — return 0 new shapes, don't throw
+                this.removeCallBackByID(payload.id).resolve([] as string[])
+                this.broadCast()
+                return
+            case "initialize":
+                // Shouldn't happen since initialize starts the worker before posting,
+                // but handle gracefully.
+                const msgInit = "Cannot call initialize without starting worker"
+                this.removeCallBackByID(payload.id).reject(msgInit)
+                throw new Error(msgInit)
+            default:
+                const message = "Cannot call any controller function without initializing first"
+                this.removeCallBackByID(payload.id).reject(message)
+                throw new Error(message)
         }
     }
 
@@ -42,6 +82,19 @@ export class GeometrizeController implements GeometrizeInstance {
             switch (type) {
                 case "initialize":
                     this.currentBitMap = value;
+                    // If any options were stashed via setOptions() prior to initialize,
+                    // replay them into the fresh worker now.
+                    if (this._pendingOptions) {
+                        try {
+                            this.setOptions(this._pendingOptions).finally(() => {
+                                callback.resolve(value)
+                                this.broadCast()
+                            })
+                            return
+                        } catch (_e) {
+                            // fall through to normal resolve below
+                        }
+                    }
                     callback.resolve(value)
                     break;
                 case "exception":
@@ -90,6 +143,13 @@ export class GeometrizeController implements GeometrizeInstance {
         const result = new Promise<string[]>((resolve, reject) => {
             const id = this.queueCallBack(resolve, reject, "getShapesJSON")
             this.postMessage({ type: "getShapesJSON", id })
+        })
+        return result;
+    }
+    getShapesCompact(): Promise<CompactShapeRow[]> {
+        const result = new Promise<CompactShapeRow[]>((resolve, reject) => {
+            const id = this.queueCallBack(resolve, reject, "getShapesCompact")
+            this.postMessage({ type: "getShapesCompact", id })
         })
         return result;
     }
